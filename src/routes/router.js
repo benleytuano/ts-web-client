@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router";
 
 import RootLayout from "../layouts/RootLayout";
+import rootLayoutLoader from "../pages/Dashboard/Loader/rootLayoutLoader";
 import Dashboard from "../pages/Dashboard/Dashboard";
 import dashboardLoader from "../pages/Dashboard/Loader/dashboardLoader";
 import Register from "../pages/Register/Register";
@@ -33,11 +34,17 @@ export const router = createBrowserRouter([
   {
     path: "/register",
     Component: Register,
-  }, 
+  },
   {
     path: "/dashboard",
     Component: RootLayout,
-    loader: dashboardLoader,
-    children: [{ index: true, Component: Dashboard }],
+    loader: rootLayoutLoader, // uncomment this when commiting
+    children: [
+      {
+        index: true,
+        Component: Dashboard,
+        loader: dashboardLoader,
+      },
+    ],
   },
 ]);
