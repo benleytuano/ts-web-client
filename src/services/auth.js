@@ -6,7 +6,10 @@ export async function isAuthenticated() {
     // Your backend returns user object? Adapt this check as needed.
     if (response.status === 200 && response.data.user) {
       console.log("Authenctication Checker Data: ", response);
-      return true;
+      return {
+        isAuthenticated: true,
+        user:  response.data.user
+      };
     }
     return false;
   } catch (error) {

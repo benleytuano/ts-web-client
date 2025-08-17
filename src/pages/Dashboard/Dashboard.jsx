@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useLoaderData } from "react-router";
+import { useState, useMemo } from "react";
+import { useRouteLoaderData, useLoaderData } from "react-router";
 import { TicketList } from "./parts/TicketList";
 import { TicketDetails } from "./parts/TicketDetails";
 import { TicketInfoPanel } from "./parts/TicketInfoPanel";
@@ -19,140 +19,88 @@ const mockTickets = [
     updatedAt: "2025-05-27T12:20:00Z",
     location: "DOCUMENT CONTROL CENTER",
   },
-  {
-    id: "61674",
-    title: "PRINTER NOT WORKING",
-    description:
-      "printer not working - urgent repair needed for patient documentation",
-    requester: "Rheenamel Pacamara",
-    department: "NURSING - OPD",
-    category: "Printer Repair",
-    priority: "High",
-    status: "Open",
-    createdAt: "2025-05-27T12:38:00Z",
-    updatedAt: "2025-05-27T12:57:00Z",
-    assignedTo: "John Paul Mendoza",
-    location: "NURSING - OPD",
-  },
-  {
-    id: "61670",
-    title: "CENSUS OF ABTC PATIENTS",
-    description: "Census report generation needed for monthly statistics",
-    requester: "Juan Paulo Maturan",
-    department: "PUBLIC HEALTH UNIT",
-    category: "System Concerns",
-    priority: "Medium",
-    status: "Open",
-    createdAt: "2025-05-27T11:51:00Z",
-    updatedAt: "2025-05-27T11:51:00Z",
-    location: "PUBLIC HEALTH UNIT",
-  },
-  {
-    id: "61660",
-    title: "PRINTER MAINTENANCE",
-    description:
-      "Printer maintenance required - toner replacement and cleaning",
-    requester: "Ma. Corazon Uymasuy",
-    department: "NURSING - PEDIATRICS",
-    category: "Printer Repair",
-    priority: "Low",
-    status: "Open",
-    createdAt: "2025-05-27T11:03:00Z",
-    updatedAt: "2025-05-27T11:03:00Z",
-    location: "NURSING - PEDIATRICS",
-  },
-  {
-    id: "61659",
-    title: "NETWORK CONNECTIVITY ISSUE",
-    description: "Intermittent network connection in emergency department",
-    requester: "Dr. Maria Santos",
-    department: "EMERGENCY DEPARTMENT",
-    category: "Network Issue",
-    priority: "Critical",
-    status: "In Progress",
-    createdAt: "2025-05-27T10:30:00Z",
-    updatedAt: "2025-05-27T14:15:00Z",
-    assignedTo: "Tech Support Team",
-    location: "EMERGENCY DEPARTMENT",
-  },
-  {
-    id: "61658",
-    title: "SOFTWARE UPDATE REQUEST",
-    description: "EMR system needs security patches and feature updates",
-    requester: "IT Administrator",
-    department: "IT DEPARTMENT",
-    category: "Software Update",
-    priority: "High",
-    status: "Open",
-    createdAt: "2025-05-27T09:45:00Z",
-    updatedAt: "2025-05-27T09:45:00Z",
-    location: "IT DEPARTMENT",
-  },
-  {
-    id: "61657",
-    title: "COMPUTER SLOW PERFORMANCE",
-    description: "Workstation running slowly affecting patient care workflow",
-    requester: "Nurse Jennifer Cruz",
-    department: "NURSING - ICU",
-    category: "Hardware Issue",
-    priority: "Medium",
-    status: "Open",
-    createdAt: "2025-05-27T08:20:00Z",
-    updatedAt: "2025-05-27T08:20:00Z",
-    location: "NURSING - ICU",
-  },
-  {
-    id: "61656",
-    title: "EMAIL ACCESS PROBLEM",
-    description: "Unable to access email account - password reset needed",
-    requester: "Dr. Robert Kim",
-    department: "CARDIOLOGY",
-    category: "Account Issue",
-    priority: "Medium",
-    status: "Resolved",
-    createdAt: "2025-05-26T16:30:00Z",
-    updatedAt: "2025-05-27T08:00:00Z",
-    assignedTo: "Help Desk",
-    location: "CARDIOLOGY DEPARTMENT",
-  },
-  {
-    id: "61655",
-    title: "BARCODE SCANNER MALFUNCTION",
-    description: "Barcode scanner not reading medication labels properly",
-    requester: "Pharmacy Staff",
-    department: "PHARMACY",
-    category: "Hardware Issue",
-    priority: "High",
-    status: "Open",
-    createdAt: "2025-05-26T14:15:00Z",
-    updatedAt: "2025-05-26T14:15:00Z",
-    location: "PHARMACY DEPARTMENT",
-  },
-  {
-    id: "61654",
-    title: "BACKUP SYSTEM FAILURE",
-    description: "Daily backup process failed - need immediate attention",
-    requester: "System Administrator",
-    department: "IT DEPARTMENT",
-    category: "System Critical",
-    priority: "Critical",
-    status: "In Progress",
-    createdAt: "2025-05-26T07:00:00Z",
-    updatedAt: "2025-05-26T15:30:00Z",
-    assignedTo: "Senior IT Specialist",
-    location: "SERVER ROOM",
-  },
 ];
 
-export default function Dashboard() {
-  const [selectedTicket, setSelectedTicket] = useState(mockTickets[1]);
+// --- helpers ---
+const mapPriority = (p) => {
+  const m = { critical: "Critical", high: "High", medium: "Medium", low: "Low" };
+  return m[String(p || "").toLowerCase()] || "Low";
+};
 
-  return (
+const mapStatus = (s) => {
+  const m = {
+    open: "Open",
+    in_progress: "In Progress",
+    resolved: "Resolved",
+    closed: "Closed",
+  };
+  return m[String(s || "").toLowerCase()] || "Open";
+};
+
+const fullName = (u) => {
+  if (!u) return "";
+  const first = (u.first_name || "").trim();
+  const last = (u.last_name || "").trim();
+  const name = `${first} ${last}`.trim();
+  return name || u.email || "Unassigned";
+};
+
+/**
+ * Normalize one server ticket -> UI ticket
+ * Server shape (example):
+ * {
+ *   id, title, description, priority: "high", status: "open",
+ *   created_at, updated_at,
+ *   user: { first_name, last_name, email },
+ *   category: { name }, department: { name }, location: { name }
+ * }
+ *
+ * UI shape expected by TicketList:
+ * {
+ *   id, title, description, requester, department, category,
+ *   priority: "High"|"Medium"..., status: "Open"|"In Progress"...,
+ *   createdAt, updatedAt, assignedTo?, location
+ * }
+ */
+export const normalizeTicket = (t) => {
+  return {
+    id: String(t.id),
+    title: t.title ?? "Untitled",
+    description: t.description ?? "",
+    requester: fullName(t.user),
+    department: t.department?.name ?? "",
+    category: t.category?.name ?? "",
+    priority: mapPriority(t.priority),
+    status: mapStatus(t.status),
+    createdAt: t.created_at ?? null,
+    updatedAt: t.updated_at ?? t.created_at ?? null,
+    // Your current API sample has no assignee field; leave undefined
+    assignedTo: undefined,
+    // Use location name; or combine with department if you prefer
+    location: t.location?.name ?? t.department?.name ?? "",
+  };
+};
+
+export const normalizeTickets = (arr) => (Array.isArray(arr) ? arr.map(normalizeTicket) : []);
+
+
+export default function Dashboard() {
+  const data = useLoaderData();
+  const serverTickets = data.tickets;
+  const tickets = useMemo(() => normalizeTickets(serverTickets), [serverTickets]);
+  const [selectedTicket, setSelectedTicket] = useState(tickets[0]);
+  const user = useRouteLoaderData('root');
+
+  console.log("Data received from loader:", serverTickets);
+  console.log("User :", user);
+  
+
+  return ( 
     <>
       <div className="flex-1 flex min-h-0 relative">
         {/* Ticket List */}
         <TicketList
-          tickets={mockTickets}
+          tickets={tickets}
           selectedTicket={selectedTicket}
           onTicketSelect={setSelectedTicket}
         />

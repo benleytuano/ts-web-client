@@ -36,6 +36,7 @@ export const router = createBrowserRouter([
     Component: Register,
   },
   {
+    id: 'root',
     path: "/dashboard",
     Component: RootLayout,
     loader: rootLayoutLoader, // uncomment this when commiting
