@@ -128,42 +128,40 @@ export function TicketDetails({ ticket }) {
                     <p className="text-gray-600 mb-4">{ticket.description}</p>
                   </div>
 
-                  <div className="bg-blue-50 p-4 rounded-lg space-y-3">
-                    <h4 className="font-medium">Additional Information:</h4>
-                    <div className="space-y-3 text-sm">
+                  {/* Additional Information (no location) */}
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <h4 className="mb-3 text-sm font-medium text-gray-700">Additional information</h4>
+
+                    <dl className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
                       <div>
-                        <Label className="font-medium">
-                          Your Output Messenger/Telephone Number:
-                        </Label>
-                        <p className="text-gray-600">Not provided</p>
+                        <dt className="text-xs font-medium text-gray-500">
+                          Contact (Messenger/Phone)
+                        </dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {ticket.contact_number ?? "—"}
+                        </dd>
                       </div>
+
                       <div>
-                        <Label className="font-medium">
-                          Your Location/Office/Department/Section:
-                        </Label>
-                        <p className="text-gray-600">{ticket.location}</p>
+                        <dt className="text-xs font-medium text-gray-500">
+                          Patient name (optional)
+                        </dt>
+                        <dd className="mt-1 text-sm text-gray-500">
+                          {ticket.patient_name ? ticket.patient_name : "Not applicable"}
+                        </dd>
                       </div>
-                      <div>
-                        <Label className="font-medium">
-                          Patient Name EDIFY/MEDIX/PMIS (if applicable):
-                        </Label>
-                        <p className="text-gray-600">Not applicable</p>
+
+                      <div className="md:col-span-2">
+                        <dt className="text-xs font-medium text-gray-500">
+                          Equipment (brand/model)
+                        </dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {ticket.equipment_details ?? "—"}
+                        </dd>
                       </div>
-                      <div>
-                        <Label className="font-medium">
-                          PC/Printer/Other IT equipment Brand/Model (if
-                          applicable):
-                        </Label>
-                        <p className="text-gray-600">To be specified</p>
-                      </div>
-                      <div>
-                        <Label className="font-medium">
-                          Details of Concern:
-                        </Label>
-                        <p className="text-gray-600">{ticket.description}</p>
-                      </div>
-                    </div>
+                    </dl>
                   </div>
+
                 </CardContent>
               </Card>
 
