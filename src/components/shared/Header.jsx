@@ -95,9 +95,9 @@ export function Header({ ticketId }) {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium">Tuaño, Benley Earl</p>
+                  <p className="font-medium">this should be the name of the login user</p>
                   <p className="w-[200px] truncate text-sm text-muted-foreground">
-                    Administrator
+                    this should be the the role of the login user
                   </p>
                 </div>
               </div>

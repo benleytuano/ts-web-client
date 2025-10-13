@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router";
-import { Sidebar } from "../components/parts/Sidebar";
-import { Header } from "../components/parts/Header";
+import { Sidebar } from "../components/shared/Sidebar";
+import { Header } from "../components/shared/Header";
 
 const mockTickets = [
   {

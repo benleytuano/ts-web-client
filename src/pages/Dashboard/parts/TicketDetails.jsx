@@ -20,6 +20,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
 export function TicketDetails({ ticket }) {
+  console.log("Selected Ticket", ticket);
   const getPriorityColor = (priority) => {
     switch (priority) {
       case "Critical":

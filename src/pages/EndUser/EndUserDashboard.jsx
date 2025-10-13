@@ -1,6 +1,6 @@
 // src/pages/EndUser/EndUserDashboard.jsx
 import { useState } from "react"
-import { NewTicketModal } from "../../components/parts/NewTicketModal"
+import { NewTicketModal } from "../../components/shared/NewTicketModal"
 import { DashboardHeader } from "./parts/DashboardHeader"
 import { TicketStats } from "./parts/TicketStats"
 import { QuickActions } from "./parts/QuickActions"
@@ -244,12 +244,12 @@ export default function EndUserDashboard() {
   const [selectedQuickAction, setSelectedQuickAction] = useState(null)
   
   // Get data from loader
-  const { categories: rawCategories, loading, error } = useLoaderData()
+  const { categories, tickets, loading, error } = useLoaderData()
 
-  console.log('Raw categories from loader:', rawCategories)
-
+  console.log('Raw categories from loader:', categories)
+  console.log('Raw Tickets from loader', tickets);
   // ✅ Map API categories with metadata
-  const mappedCategories = rawCategories?.map(dbCategory => {
+  const mappedCategories = categories?.map(dbCategory => {
     const metadata = CATEGORY_METADATA[dbCategory.id]
     
     if (!metadata) {
@@ -285,7 +285,7 @@ export default function EndUserDashboard() {
   }
   
   // For now, using the mock data directly
-  const tickets = userTickets
+  // const tickets = userTickets
   const announcements = announcementsData
 
   // ✅ Mock locations (replace with real data from loader later)
@@ -345,7 +345,7 @@ export default function EndUserDashboard() {
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-white border rounded-lg shadow-lg p-3 text-xs max-w-sm">
           <h4 className="font-semibold mb-1">Debug Info</h4>
-          <div>Raw categories: {rawCategories?.length || 0}</div>
+          <div>Raw categories: {categories?.length || 0}</div>
           <div>Mapped categories: {mappedCategories.length}</div>
           <div>Locations: {mockLocations.length}</div>
           <div>User: {mockUser.name}</div>

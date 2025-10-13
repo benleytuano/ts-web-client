@@ -1,25 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouteLoaderData, useLoaderData } from "react-router";
+import axios from "../../services/api"; // your configured axios instance
 import { TicketList } from "./parts/TicketList";
 import { TicketDetails } from "./parts/TicketDetails";
 import { TicketInfoPanel } from "./parts/TicketInfoPanel";
-
-const mockTickets = [
-  {
-    id: "61676",
-    title: "WEBSITE UPDATE",
-    description:
-      "DOCUMENT CONTROL CENTER needs website updates for new compliance requirements",
-    requester: "Regis Saamit",
-    department: "Multimedia",
-    category: "System Request",
-    priority: "Medium",
-    status: "Open",
-    createdAt: "2025-05-27T12:20:00Z",
-    updatedAt: "2025-05-27T12:20:00Z",
-    location: "DOCUMENT CONTROL CENTER",
-  },
-];
 
 // --- helpers ---
 const mapPriority = (p) => {
@@ -62,64 +46,174 @@ const fullName = (u) => {
  *   createdAt, updatedAt, assignedTo?, location
  * }
  */
-export const normalizeTicket = (t) => {
+// assumes: mapPriority, mapStatus, fullName exist in scope
+
+export const normalizeTicket = (t = {}) => {
   return {
-    id: String(t.id),
+    // --- UI-friendly fields (your current names) ---
+    id: String(t.id ?? ""),
     title: t.title ?? "Untitled",
     description: t.description ?? "",
     requester: fullName(t.user),
     department: t.department?.name ?? "",
     category: t.category?.name ?? "",
-    priority: mapPriority(t.priority),
-    status: mapStatus(t.status),
+    location: t.location?.name ?? t.department?.name ?? "",
+    priority: mapPriority(t.priority),          // "high" -> "High"
+    status: mapStatus(t.status),                // "in_progress" -> "In Progress"
     createdAt: t.created_at ?? null,
     updatedAt: t.updated_at ?? t.created_at ?? null,
-    // Your current API sample has no assignee field; leave undefined
-    assignedTo: undefined,
-    // Use location name; or combine with department if you prefer
-    location: t.location?.name ?? t.department?.name ?? "",
+
+    // NEW: assignment fields (for Info Panel buttons/labels)
+    assignedTo: t.assignee ? fullName(t.assignee) : undefined,
+    assignee_id: t.assignee?.id ?? t.assignee_id ?? null,
+    assignedAt: t.assigned_at ?? null,
+
+    // --- Original scalars (keep for edits/filters) ---
+    user_id: t.user_id ?? null,
+    category_id: t.category_id ?? null,
+    department_id: t.department_id ?? null,
+    location_id: t.location_id ?? null,
+    contact_number: t.contact_number ?? "",
+    patient_name: t.patient_name ?? "",
+    equipment_details: t.equipment_details ?? "",
+
+    // --- Preserve nested objects (no clobbering UI strings) ---
+    userObj: t.user ?? null,
+    assigneeObj: t.assignee ?? null,
+    categoryObj: t.category ?? null,
+    departmentObj: t.department ?? null,
+    locationObj: t.location ?? null,
   };
 };
+
 
 export const normalizeTickets = (arr) => (Array.isArray(arr) ? arr.map(normalizeTicket) : []);
 
 
 export default function Dashboard() {
   const data = useLoaderData();
-  const serverTickets = data.tickets;
-  const tickets = useMemo(() => normalizeTickets(serverTickets), [serverTickets]);
-  const [selectedTicket, setSelectedTicket] = useState(tickets[0]);
-  const user = useRouteLoaderData('root');
+  const serverTickets = data.tickets || [];
 
-  console.log("Data received from loader:", serverTickets);
-  console.log("User :", user);
-  
+  // keep tickets in local state so we can surgically replace one
+  const initial = useMemo(() => normalizeTickets(serverTickets), [serverTickets]);
+  const [tickets, setTickets] = useState(initial);
+  const [selectedTicket, setSelectedTicket] = useState(initial[0] || null);
+  const user = useRouteLoaderData("root");
 
-  return ( 
-    <>
-      <div className="flex-1 flex min-h-0 relative">
-        {/* Ticket List */}
-        <TicketList
-          tickets={tickets}
-          selectedTicket={selectedTicket}
-          onTicketSelect={setSelectedTicket}
-        />
+  console.log("User", user);
 
-        {/* Middle + Right Panel */}
-        {/* 👇 OVERFLOW GOES HERE */}
-        <div className="flex flex-1 min-h-0 min-w-0 overflow-auto">
-          {/* Ticket Details */}
-          <div className="flex-1 min-w-0 p-6 ">
-            {selectedTicket && <TicketDetails ticket={selectedTicket} />}
-          </div>
-          {/* Info Panel - Sticky */}
-          {selectedTicket && (
-            <div className="sticky top-0 p-4">
-              <TicketInfoPanel ticket={selectedTicket} />
-            </div>
-          )}
+// after you read `user`
+const currentUserId =
+  Number(user?.id ?? user?.user?.id ?? user?.data?.id ?? null);
+
+const roleName =
+  (user?.role?.name || user?.role || "").toString().toLowerCase();
+
+const canAssignOrUnassign = roleName === "admin" || roleName === "agent";
+const canReassign = roleName === "admin";
+
+  // sync local state when loader data changes
+  useEffect(() => {
+    setTickets(initial);
+    setSelectedTicket((prev) => {
+      if (!prev) return initial[0] || null;
+      const still = initial.find((t) => String(t.id) === String(prev.id));
+      return still ?? (initial[0] || null);
+    });
+  }, [initial]);
+
+  // helper to replace a ticket in list + selection
+  const replaceTicket = (updated) => {
+    const norm = normalizeTicket(updated);
+    setTickets((prev) => prev.map((t) => (String(t.id) === String(norm.id) ? norm : t)));
+    setSelectedTicket((prev) => (prev && String(prev.id) === String(norm.id) ? norm : prev));
+  };
+
+  // --- ASSIGN TO ME ---
+  const assignToMe = async (ticketId) => {
+    try {
+      const res = await axios.post(`/tickets/${ticketId}/assign`);
+      replaceTicket(res.data);
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status === 409) {
+        alert("Someone already took this ticket. Please refresh.");
+      } else {
+        alert(err?.response?.data?.message || "Assign failed.");
+      }
+      console.error(err);
+    }
+  };
+
+  // --- UNASSIGN ---
+  const unassign = async (ticketId, expectedAssigneeId = null) => {
+    try {
+      const res = await axios.post(`/tickets/${ticketId}/unassign`, {
+        expected_assignee_id: expectedAssigneeId,
+      });
+      replaceTicket(res.data);
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status === 409) {
+        alert("Assignment changed while you were viewing it. Please refresh.");
+      } else {
+        alert(err?.response?.data?.message || "Unassign failed.");
+      }
+      console.error(err);
+    }
+  };
+
+  // resolve ticket
+
+  const resolveTicket = async (ticketId) => {
+    try {
+      const res = await axios.post(`/tickets/${ticketId}/resolve`);
+      replaceTicket(res.data); // keep your list + selection in sync
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status === 403) {
+        alert("Only the current assignee can resolve this ticket.");
+      } else if (status === 409) {
+        alert("Ticket state changed or already resolved/closed. Please refresh.");
+      } else {
+        alert(err?.response?.data?.message || "Resolve failed.");
+      }
+      console.error(err);
+    }
+  };
+
+
+  return (
+    <div className="flex-1 flex min-h-0 relative">
+      <TicketList
+        tickets={tickets}
+        selectedTicket={selectedTicket}
+        onTicketSelect={setSelectedTicket}
+      />
+
+      <div className="flex flex-1 min-h-0 min-w-0 overflow-auto">
+        <div className="flex-1 min-w-0 p-6 ">
+          {selectedTicket && <TicketDetails ticket={selectedTicket} />}
         </div>
+
+        {selectedTicket && (
+          <div className="sticky top-0 p-4">
+            <TicketInfoPanel
+              ticket={selectedTicket}
+              currentUserId={currentUserId}
+              canAssignOrUnassign={canAssignOrUnassign}
+              canReassign={canReassign}
+              onAssignToMe={() => assignToMe(selectedTicket.id)}
+              onUnassign={() =>
+                unassign(selectedTicket.id, selectedTicket.assignee_id ?? null)
+              }
+              onResolve={() => resolveTicket(selectedTicket.id)}   // 👈 NEW
+            />
+          </div>
+        )}
+
+
       </div>
-    </>
+    </div>
   );
 }

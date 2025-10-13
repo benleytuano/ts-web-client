@@ -1,33 +1,43 @@
 
 import axios from "../../../services/api"
 
+
+/** Normalize common Laravel API shapes -> array */
+function normalizeArray(res){
+  const d = res?.data;
+  if (!d) return [];
+  if (Array.isArray(d)) return d;              // pure array
+  if (Array.isArray(d.data)) return d.data;    // { data: [...] } or paginated
+  if (d.success && Array.isArray(d.data)) return d.data; // { success, data: [...] }
+  return [];
+}
+
 /**
- * Simple loader that fetches categories from the backend
+ * Simple loader that fetches categories and CURRENT USER'S tickets
+ * Requires Sanctum token attached to axios (via interceptor or headers)
  */
 export async function endUserDashboardLoader() {
   try {
-    // Make API request to get categories
-    const response = await axios.get('/categories')
-    
-    console.log('Categories API Response:', response.data)
-    
-    // Extract categories from response
-    // Assuming your Laravel API returns: { success: true, data: [...], message: "..." }
-    const categories = response.data.success ? response.data.data : []
-    
-    return {
-      categories: categories,
-      loading: false,
-      error: null
-    }
-    
+    // ⚠️ If you DON'T have a global axios auth interceptor, uncomment next 3 lines:
+    // const token = localStorage.getItem("token");
+    // if (token) axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+
+    const [catRes, ticketRes] = await Promise.all([
+      axios.get("/categories"),   // public or protected depending on your API
+      axios.get("/tickets"),      // protected (auth:sanctum) — returns THIS user's tickets
+    ]);
+
+    const categories = normalizeArray(catRes);
+    const tickets    = normalizeArray(ticketRes);
+
+    return { categories, tickets, loading: false, error: null };
   } catch (error) {
-    console.error('Error fetching categories:', error)
-    
+    console.error("EndUserDashboard loader error:", error);
     return {
       categories: [],
+      tickets: [],
       loading: false,
-      error: error.message || 'Failed to fetch categories'
-    }
+      error: error?.response?.data?.message || error?.message || "Failed to load dashboard",
+    };
   }
 }

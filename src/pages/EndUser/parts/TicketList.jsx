@@ -13,10 +13,10 @@ export function TicketList({ tickets }) {
     (ticket) =>
       ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ticket.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ticket.category.toLowerCase().includes(searchQuery.toLowerCase()),
+      ticket.category.name.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
-  const openTickets = filteredTickets.filter((t) => t.status === "Open" || t.status === "In Progress")
+  const openTickets = filteredTickets.filter((t) => t.status === "open" || t.status === "In Progress")
   const closedTickets = filteredTickets.filter((t) => t.status === "Resolved" || t.status === "Closed")
 
   return (

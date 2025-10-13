@@ -22,7 +22,15 @@ export default async function loginPostAction({ request }) {
     localStorage.setItem("authToken", token);
 
     // Redirect on successful login
-    return redirect("/dashboard");
+    if(response.data.user.role.id != 3){
+      return redirect("/dashboard");
+    }else{
+      return redirect("/end-user-dashboard")
+    }
+    
+
+    
+    
   } catch (error) {
     // Optionally log error for dev
     console.error(error);
