@@ -27,6 +27,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useState } from "react";
+import { logout } from "../../services/auth";
 
 export function Header({ ticketId }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -111,7 +112,11 @@ export function Header({ ticketId }) {
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem onClick={async () => {
+                  console.log("Logging out...");
+                  await logout();
+                }}
+                className="text-red-600">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>

@@ -1,3 +1,4 @@
+
 import axios from "./api";
 
 export async function isAuthenticated() {
@@ -23,5 +24,20 @@ export async function isAuthenticated() {
     // Other errors: could be network/server, treat as unauthenticated or log for debugging
     console.error("Auth check error:", error);
     return false;
+  }
+}
+
+export async function logout() {
+  try {
+    const response = await axios.post("/auth/logout");
+    if (response.data?.success) {
+      localStorage.removeItem("authToken");
+      sessionStorage.clear();
+      window.location.replace("/"); // ✅ works globally
+    }
+  } catch {
+    localStorage.removeItem("authToken");
+    sessionStorage.clear();
+    window.location.replace("/");
   }
 }
