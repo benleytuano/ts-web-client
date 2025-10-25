@@ -19,6 +19,7 @@ import {
   XCircle,
   Clock,
   User,
+  InboxIcon,
 } from "lucide-react";
 
 export function TicketList({ tickets, selectedTicket, onTicketSelect }) {
@@ -158,53 +159,69 @@ export function TicketList({ tickets, selectedTicket, onTicketSelect }) {
       </div>
 
       {/* Scrollable Ticket List */}
-      <div className="p-2 space-y-2 min-h-full">
-        {filteredTickets.map((ticket) => (
-          <Card
-            key={ticket.id}
-            className={`cursor-pointer transition-all hover:shadow-sm ${
-              selectedTicket?.id === ticket.id
-                ? "ring-2 ring-blue-500 bg-blue-50"
-                : ""
-            }`}
-            onClick={() => onTicketSelect(ticket)}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  {getCategoryIcon(ticket.category)}
-                  <span className="text-sm font-medium text-blue-600">
-                    #{ticket.id}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  {getStatusIcon(ticket.status)}
-                  <div
-                    className={`w-2 h-2 rounded-full ${getPriorityColor(
-                      ticket.priority
-                    )}`}
-                  />
-                </div>
-              </div>
-              <h3 className="font-semibold text-sm mb-1 line-clamp-2">
-                {ticket.title}
+      <div className="p-2 space-y-2 min-h-full flex flex-col">
+        {filteredTickets.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center py-12">
+              <InboxIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                No Tickets Found
               </h3>
-              <p className="text-xs text-gray-600 mb-2 line-clamp-1">
-                {ticket.description}
+              <p className="text-sm text-gray-500">
+                {tickets.length === 0
+                  ? "There are no tickets yet. Create one to get started!"
+                  : "No tickets match your current filters. Try adjusting your search or filters."}
               </p>
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <div className="flex items-center space-x-1 min-w-0">
-                  <User className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate">{ticket.requester}</span>
+            </div>
+          </div>
+        ) : (
+          filteredTickets.map((ticket) => (
+            <Card
+              key={ticket.id}
+              className={`cursor-pointer transition-all hover:shadow-sm ${
+                selectedTicket?.id === ticket.id
+                  ? "ring-2 ring-blue-500 bg-blue-50"
+                  : ""
+              }`}
+              onClick={() => onTicketSelect(ticket)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    {getCategoryIcon(ticket.category)}
+                    <span className="text-sm font-medium text-blue-600">
+                      #{ticket.id}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    {getStatusIcon(ticket.status)}
+                    <div
+                      className={`w-2 h-2 rounded-full ${getPriorityColor(
+                        ticket.priority
+                      )}`}
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center space-x-1 flex-shrink-0">
-                  <Clock className="h-3 w-3" />
-                  <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
+                <h3 className="font-semibold text-sm mb-1 line-clamp-2">
+                  {ticket.title}
+                </h3>
+                <p className="text-xs text-gray-600 mb-2 line-clamp-1">
+                  {ticket.description}
+                </p>
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center space-x-1 min-w-0">
+                    <User className="h-3 w-3 flex-shrink-0" />
+                    <span className="truncate">{ticket.requester}</span>
+                  </div>
+                  <div className="flex items-center space-x-1 flex-shrink-0">
+                    <Clock className="h-3 w-3" />
+                    <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );

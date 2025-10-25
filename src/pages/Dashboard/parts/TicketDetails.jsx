@@ -11,6 +11,7 @@ import {
   Underline,
   List,
   Plus,
+  FileText,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,24 @@ import { Textarea } from "@/components/ui/textarea";
 
 export function TicketDetails({ ticket }) {
   console.log("Selected Ticket", ticket);
+
+  // Empty state fallback
+  if (!ticket) {
+    return (
+      <div className="flex-1 bg-gray-50 min-w-0 flex flex-col h-full items-center justify-center">
+        <div className="text-center">
+          <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-semibold text-gray-600 mb-2">
+            No Ticket Selected
+          </h2>
+          <p className="text-gray-500">
+            Select a ticket from the list to view its details
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const getPriorityColor = (priority) => {
     switch (priority) {
       case "Critical":

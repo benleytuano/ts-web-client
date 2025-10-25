@@ -193,24 +193,22 @@ const canReassign = roleName === "admin";
 
       <div className="flex flex-1 min-h-0 min-w-0 overflow-auto">
         <div className="flex-1 min-w-0 p-6 ">
-          {selectedTicket && <TicketDetails ticket={selectedTicket} />}
+          <TicketDetails ticket={selectedTicket} />
         </div>
 
-        {selectedTicket && (
-          <div className="sticky top-0 p-4">
-            <TicketInfoPanel
-              ticket={selectedTicket}
-              currentUserId={currentUserId}
-              canAssignOrUnassign={canAssignOrUnassign}
-              canReassign={canReassign}
-              onAssignToMe={() => assignToMe(selectedTicket.id)}
-              onUnassign={() =>
-                unassign(selectedTicket.id, selectedTicket.assignee_id ?? null)
-              }
-              onResolve={() => resolveTicket(selectedTicket.id)}   // 👈 NEW
-            />
-          </div>
-        )}
+        <div className="sticky top-0 p-4">
+          <TicketInfoPanel
+            ticket={selectedTicket}
+            currentUserId={currentUserId}
+            canAssignOrUnassign={canAssignOrUnassign}
+            canReassign={canReassign}
+            onAssignToMe={() => selectedTicket && assignToMe(selectedTicket.id)}
+            onUnassign={() =>
+              selectedTicket && unassign(selectedTicket.id, selectedTicket.assignee_id ?? null)
+            }
+            onResolve={() => selectedTicket && resolveTicket(selectedTicket.id)}
+          />
+        </div>
 
 
       </div>

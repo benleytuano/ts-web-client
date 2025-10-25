@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User, MapPin, Calendar, CheckCircle, Shield, Loader2 } from "lucide-react";
+import { User, MapPin, Calendar, CheckCircle, Shield, Loader2, Inbox } from "lucide-react";
 
 export function TicketInfoPanel({
   ticket,
@@ -52,6 +52,23 @@ export function TicketInfoPanel({
       .join("")
       .slice(0, 2)
       .toUpperCase();
+
+  // Empty state fallback
+  if (!ticket) {
+    return (
+      <div className="w-80 bg-white border-l flex-shrink-0 h-full flex items-center justify-center">
+        <div className="text-center p-4">
+          <Inbox className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">
+            No Ticket Selected
+          </h3>
+          <p className="text-sm text-gray-500">
+            Select a ticket to view its information and take actions
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-80 bg-white border-l flex-shrink-0 h-full">
