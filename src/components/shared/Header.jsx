@@ -29,7 +29,35 @@ import {
 import { useState } from "react";
 import { logout } from "../../services/auth";
 
-export function Header({ ticketId }) {
+// Helper function to capitalize first letter of each word
+const capitalizeWords = (str) => {
+  if (!str) return "";
+  return str
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
+// Helper function to get user initials
+const getUserInitials = (user) => {
+  if (!user) return "U";
+
+  if (user.first_name && user.last_name) {
+    return (user.first_name.charAt(0) + user.last_name.charAt(0)).toUpperCase();
+  }
+
+  if (user.name) {
+    const parts = user.name.split(" ");
+    if (parts.length >= 2) {
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+    return user.name.charAt(0).toUpperCase();
+  }
+
+  return "U";
+};
+
+export function Header({ ticketId, user }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   return (
@@ -88,7 +116,7 @@ export function Header({ ticketId }) {
               >
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-blue-500 text-white font-semibold">
-                    TB
+                    {getUserInitials(user)}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -96,9 +124,15 @@ export function Header({ ticketId }) {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium">this should be the name of the login user</p>
+                  <p className="font-medium">
+                    {capitalizeWords(
+                      user?.first_name && user?.last_name
+                        ? `${user.first_name} ${user.last_name}`
+                        : user?.name || "User"
+                    )}
+                  </p>
                   <p className="w-[200px] truncate text-sm text-muted-foreground">
-                    this should be the the role of the login user
+                    {capitalizeWords(user?.role?.name || "User")}
                   </p>
                 </div>
               </div>

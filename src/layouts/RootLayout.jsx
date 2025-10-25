@@ -163,7 +163,7 @@ export default function RootLayout() {
           />
 
           <div className="flex-1 flex flex-col min-w-0">
-            <Header ticketId={selectedTicket?.id} />
+            <Header ticketId={selectedTicket?.id} user={user} />
             <Outlet />
           </div>
         </div>
