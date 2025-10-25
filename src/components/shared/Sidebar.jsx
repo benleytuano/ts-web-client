@@ -19,11 +19,40 @@ const navigationItems = [
   { id: "administration", label: "Administration", icon: Settings },
 ];
 
+// Helper function to capitalize first letter of each word
+const capitalizeWords = (str) => {
+  if (!str) return "";
+  return str
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
+// Helper function to get user initials
+const getUserInitials = (user) => {
+  if (!user) return "U";
+
+  if (user.first_name && user.last_name) {
+    return (user.first_name.charAt(0) + user.last_name.charAt(0)).toUpperCase();
+  }
+
+  if (user.name) {
+    const parts = user.name.split(" ");
+    if (parts.length >= 2) {
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+    return user.name.charAt(0).toUpperCase();
+  }
+
+  return "U";
+};
+
 export function Sidebar({
   collapsed,
   onToggle,
   activeSection,
   onSectionChange,
+  user,
 }) {
   return (
     <div
@@ -78,14 +107,20 @@ export function Sidebar({
             <CardContent className="p-3">
               <div className="flex items-center space-x-2 min-w-0">
                 <Avatar className="h-8 w-8 flex-shrink-0">
-                  <AvatarFallback className="text-xs">TB</AvatarFallback>
+                  <AvatarFallback className="text-xs bg-blue-500 text-white font-semibold">
+                    {getUserInitials(user)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
-                    Tuaño, Benley Earl
+                    {capitalizeWords(
+                      user?.first_name && user?.last_name
+                        ? `${user.first_name} ${user.last_name}`
+                        : user?.name || "User"
+                    )}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
-                    Administrator
+                    {capitalizeWords(user?.role?.name || "User")}
                   </p>
                 </div>
               </div>

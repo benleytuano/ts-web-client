@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet } from "react-router";
+import { Outlet, useRouteLoaderData } from "react-router";
 import { Sidebar } from "../components/shared/Sidebar";
 import { Header } from "../components/shared/Header";
 
@@ -147,6 +147,7 @@ export default function RootLayout() {
   const [selectedTicket, setSelectedTicket] = useState(mockTickets[1]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState("tickets");
+  const user = useRouteLoaderData("root");
 
   return (
     <>
@@ -158,6 +159,7 @@ export default function RootLayout() {
             onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
             activeSection={activeSection}
             onSectionChange={setActiveSection}
+            user={user}
           />
 
           <div className="flex-1 flex flex-col min-w-0">
