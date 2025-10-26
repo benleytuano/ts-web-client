@@ -13,6 +13,7 @@ import {
   Plus,
   FileText,
   MessageSquare,
+  Info,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -153,34 +154,41 @@ export function TicketDetails({ ticket, ticketUpdates = [] }) {
                   <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                     <h4 className="mb-3 text-sm font-medium text-gray-700">Additional information</h4>
 
-                    <dl className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
-                      <div>
-                        <dt className="text-xs font-medium text-gray-500">
-                          Contact (Messenger/Phone)
-                        </dt>
-                        <dd className="mt-1 text-sm text-gray-900">
-                          {ticket.contact_number ?? "—"}
-                        </dd>
+                    {!ticket.contact_number && !ticket.patient_name && !ticket.equipment_details ? (
+                      <div className="flex items-center space-x-2 py-4 text-gray-500">
+                        <Info className="h-5 w-5 text-gray-400" />
+                        <p className="text-sm">No additional information provided by the user</p>
                       </div>
+                    ) : (
+                      <dl className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
+                        <div>
+                          <dt className="text-xs font-medium text-gray-500">
+                            Contact (Messenger/Phone)
+                          </dt>
+                          <dd className="mt-1 text-sm text-gray-900">
+                            {ticket.contact_number ? ticket.contact_number : "—"}
+                          </dd>
+                        </div>
 
-                      <div>
-                        <dt className="text-xs font-medium text-gray-500">
-                          Patient name (optional)
-                        </dt>
-                        <dd className="mt-1 text-sm text-gray-500">
-                          {ticket.patient_name ? ticket.patient_name : "Not applicable"}
-                        </dd>
-                      </div>
+                        <div>
+                          <dt className="text-xs font-medium text-gray-500">
+                            Patient name (optional)
+                          </dt>
+                          <dd className="mt-1 text-sm text-gray-500">
+                            {ticket.patient_name ? ticket.patient_name : "—"}
+                          </dd>
+                        </div>
 
-                      <div className="md:col-span-2">
-                        <dt className="text-xs font-medium text-gray-500">
-                          Equipment (brand/model)
-                        </dt>
-                        <dd className="mt-1 text-sm text-gray-900">
-                          {ticket.equipment_details ?? "—"}
-                        </dd>
-                      </div>
-                    </dl>
+                        <div className="md:col-span-2">
+                          <dt className="text-xs font-medium text-gray-500">
+                            Equipment (brand/model)
+                          </dt>
+                          <dd className="mt-1 text-sm text-gray-900">
+                            {ticket.equipment_details ? ticket.equipment_details : "—"}
+                          </dd>
+                        </div>
+                      </dl>
+                    )}
                   </div>
 
                 </CardContent>
