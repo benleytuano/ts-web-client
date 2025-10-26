@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { User, MapPin, Calendar, CheckCircle, Shield, Loader2, Inbox } from "lucide-react";
+import { formatDateToReadable } from "@/lib/utils";
 
 export function TicketInfoPanel({
   ticket,
@@ -116,7 +117,7 @@ export function TicketInfoPanel({
                 <Calendar className="h-4 w-4 text-gray-400" />
                 <span className="text-sm">
                   {ticket && ticket.createdAt
-                    ? new Date(ticket.createdAt).toLocaleString()
+                    ? formatDateToReadable(ticket.createdAt)
                     : "—"}
                 </span>
               </div>
