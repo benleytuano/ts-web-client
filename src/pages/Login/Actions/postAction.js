@@ -19,7 +19,7 @@ export default async function loginPostAction({ request }) {
 
     // Save the token, or do what you need
     const { token } = response.data;
-    localStorage.setItem("authToken", token);
+    sessionStorage.setItem("authToken", token);
 
     // Redirect on successful login
     if(response.data.user.role.id != 3){
@@ -28,7 +28,6 @@ export default async function loginPostAction({ request }) {
       return redirect("/end-user-dashboard")
     }
     
-
     
     
   } catch (error) {

@@ -31,12 +31,12 @@ export async function logout() {
   try {
     const response = await axios.post("/auth/logout");
     if (response.data?.success) {
-      localStorage.removeItem("authToken");
+      sessionStorage.removeItem("authToken");
       sessionStorage.clear();
       window.location.replace("/"); // ✅ works globally
     }
   } catch {
-    localStorage.removeItem("authToken");
+    sessionStorage.removeItem("authToken");
     sessionStorage.clear();
     window.location.replace("/");
   }
