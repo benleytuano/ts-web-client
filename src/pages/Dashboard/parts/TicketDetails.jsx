@@ -12,6 +12,7 @@ import {
   List,
   Plus,
   FileText,
+  MessageSquare,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
-export function TicketDetails({ ticket }) {
+export function TicketDetails({ ticket, ticketUpdates = [] }) {
   console.log("Selected Ticket", ticket);
 
   // Empty state fallback
@@ -218,39 +219,46 @@ export function TicketDetails({ ticket }) {
                 </CardContent>
               </Card>
 
-              {/* Extra content to demonstrate scrolling */}
+              {/* Previous Updates */}
               <Card>
                 <CardHeader>
                   <CardTitle>Previous Updates</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="border-l-4 border-blue-500 pl-4">
-                      <p className="text-sm font-medium">
-                        Update from John Paul Mendoza
+                  {ticketUpdates && ticketUpdates.length > 0 ? (
+                    <div className="space-y-4">
+                      {ticketUpdates.map((update, index) => (
+                        <div
+                          key={index}
+                          className={`border-l-4 pl-4 ${
+                            update.type === "system"
+                              ? "border-green-500"
+                              : update.type === "initial"
+                              ? "border-gray-300"
+                              : "border-blue-500"
+                          }`}
+                        >
+                          <p className="text-sm font-medium">{update.author}</p>
+                          <p className="text-xs text-gray-500 mb-2">
+                            {update.timestamp}
+                          </p>
+                          <p className="text-sm text-gray-700">
+                            {update.message}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500 font-medium mb-1">
+                        No Updates Yet
                       </p>
-                      <p className="text-xs text-gray-500 mb-2">2 hours ago</p>
-                      <p className="text-sm text-gray-700">
-                        Investigating the printer issue. Will check the network
-                        connection and driver status.
+                      <p className="text-sm text-gray-400">
+                        Updates will appear here as the ticket progresses
                       </p>
                     </div>
-                    <div className="border-l-4 border-green-500 pl-4">
-                      <p className="text-sm font-medium">System Update</p>
-                      <p className="text-xs text-gray-500 mb-2">3 hours ago</p>
-                      <p className="text-sm text-gray-700">
-                        Ticket assigned to John Paul Mendoza from IT Support.
-                      </p>
-                    </div>
-                    <div className="border-l-4 border-gray-300 pl-4">
-                      <p className="text-sm font-medium">Initial Report</p>
-                      <p className="text-xs text-gray-500 mb-2">4 hours ago</p>
-                      <p className="text-sm text-gray-700">
-                        Ticket created by Rheenamel Pacamara. Printer in NURSING
-                        - OPD not responding to print jobs.
-                      </p>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
