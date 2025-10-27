@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import {
   AlertCircle,
@@ -14,6 +15,7 @@ import {
   FileText,
   MessageSquare,
   Info,
+  Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,9 +23,71 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import axios from "../../../services/api";
+import { formatDateToReadable } from "@/lib/utils";
 
-export function TicketDetails({ ticket, ticketUpdates = [] }) {
+export function TicketDetails({ ticket }) {
+  const [ticketUpdates, setTicketUpdates] = useState([]);
+  const [loadingUpdates, setLoadingUpdates] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState("");
+  const [postingUpdate, setPostingUpdate] = useState(false);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  // Update current date/time every second for real-time display
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   console.log("Selected Ticket", ticket);
+
+  // Fetch ticket updates when ticket is selected
+  useEffect(() => {
+    if (!ticket || !ticket.id) {
+      setTicketUpdates([]);
+      return;
+    }
+
+    const fetchUpdates = async () => {
+      try {
+        setLoadingUpdates(true);
+        const response = await axios.get(`/tickets/${ticket.id}/updates`);
+        setTicketUpdates(response.data || []);
+      } catch (error) {
+        console.error("Failed to fetch ticket updates:", error);
+        setTicketUpdates([]);
+      } finally {
+        setLoadingUpdates(false);
+      }
+    };
+
+    fetchUpdates();
+  }, [ticket?.id]);
+
+  // Post a new update
+  const handlePostUpdate = async () => {
+    if (!updateMessage.trim() || !ticket?.id) return;
+
+    try {
+      setPostingUpdate(true);
+      const response = await axios.post(`/tickets/${ticket.id}/updates`, {
+        message: updateMessage,
+        type: "comment",
+        is_internal: false,
+      });
+
+      // Add the new update to the list
+      setTicketUpdates((prev) => [response.data, ...prev]);
+      setUpdateMessage("");
+    } catch (error) {
+      console.error("Failed to post update:", error);
+      alert(error?.response?.data?.message || "Failed to post update");
+    } finally {
+      setPostingUpdate(false);
+    }
+  };
 
   // Empty state fallback
   if (!ticket) {
@@ -196,7 +260,12 @@ export function TicketDetails({ ticket, ticketUpdates = [] }) {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Add Update</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Add Update</CardTitle>
+                    <div className="text-xs text-gray-500">
+                      {formatDateToReadable(currentDateTime)}
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -218,10 +287,27 @@ export function TicketDetails({ ticket, ticketUpdates = [] }) {
                     <Textarea
                       placeholder="Add your update, solution, or comment..."
                       className="min-h-[120px]"
+                      value={updateMessage}
+                      onChange={(e) => setUpdateMessage(e.target.value)}
+                      disabled={postingUpdate}
                     />
                     <div className="flex justify-end space-x-2">
-                      <Button variant="outline">Save Draft</Button>
-                      <Button>Post Update</Button>
+                      <Button variant="outline" disabled={postingUpdate}>
+                        Save Draft
+                      </Button>
+                      <Button
+                        onClick={handlePostUpdate}
+                        disabled={postingUpdate || !updateMessage.trim()}
+                      >
+                        {postingUpdate ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Posting...
+                          </>
+                        ) : (
+                          "Post Update"
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -233,11 +319,16 @@ export function TicketDetails({ ticket, ticketUpdates = [] }) {
                   <CardTitle>Previous Updates</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {ticketUpdates && ticketUpdates.length > 0 ? (
+                  {loadingUpdates ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 text-gray-400 animate-spin" />
+                      <p className="ml-2 text-gray-500">Loading updates...</p>
+                    </div>
+                  ) : ticketUpdates && ticketUpdates.length > 0 ? (
                     <div className="space-y-4">
-                      {ticketUpdates.map((update, index) => (
+                      {ticketUpdates.map((update) => (
                         <div
-                          key={index}
+                          key={update.id}
                           className={`border-l-4 pl-4 ${
                             update.type === "system"
                               ? "border-green-500"
@@ -246,9 +337,13 @@ export function TicketDetails({ ticket, ticketUpdates = [] }) {
                               : "border-blue-500"
                           }`}
                         >
-                          <p className="text-sm font-medium">{update.author}</p>
+                          <p className="text-sm font-medium">
+                            {update.user?.first_name && update.user?.last_name
+                              ? `${update.user.first_name} ${update.user.last_name}`
+                              : update.user?.name || "Unknown"}
+                          </p>
                           <p className="text-xs text-gray-500 mb-2">
-                            {update.timestamp}
+                            {formatDateToReadable(update.created_at || update.timestamp)}
                           </p>
                           <p className="text-sm text-gray-700">
                             {update.message}
