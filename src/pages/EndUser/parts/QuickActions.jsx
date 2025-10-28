@@ -1,35 +1,35 @@
 // src/components/parts/Dashboard/QuickActions.jsx
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Zap, Printer, Monitor, Wifi, Phone, Mail, Shield } from "lucide-react"
+import { Zap } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 
 export function QuickActions({ categories, onActionClick }) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Zap className="h-5 w-5 text-blue-500" />
-          <span>Quick Actions</span>
-        </CardTitle>
-        <CardDescription>Get help quickly with common issues</CardDescription>
-      </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {categories.map((action) => {
-            const Icon = action.icon
-            return (
-              <Card
-                key={action.id}
-                className={`cursor-pointer transition-all hover:shadow-md border ${action.color}`}
-                onClick={() => onActionClick(action)}
-              >
-                <CardContent className="p-4 text-center">
-                  <Icon className="h-8 w-8 mx-auto mb-2" />
-                  <h3 className="font-medium text-sm">{action.title}</h3>
-                  <p className="text-xs opacity-75 mt-1">{action.description}</p>
-                </CardContent>
-              </Card>
-            )
-          })}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="h-4 w-4 text-blue-500" />
+            <h3 className="text-sm font-semibold text-gray-700">Quick Actions</h3>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((action) => {
+              const Icon = action.icon
+              return (
+                <Button
+                  key={action.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onActionClick(action)}
+                  className="flex items-center gap-2 text-xs h-8"
+                  title={action.description}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{action.title}</span>
+                </Button>
+              )
+            })}
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -319,38 +319,43 @@ export default function EndUserDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader 
+    <div className="h-screen bg-gray-50 flex flex-col">
+      <DashboardHeader
         onNewTicket={() => setIsNewTicketOpen(true)}
         userName="RP"
       />
 
-      <div className="p-6 space-y-6">
-        <TicketStats tickets={tickets} />
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <QuickActions categories={mappedCategories} onActionClick={handleQuickAction} />
+      <div className="flex-1 flex min-h-0 overflow-hidden gap-6">
+        {/* Left Column: Stats + Quick Actions + Ticket List (70%) */}
+        <div className="flex-[7] flex flex-col min-w-0 p-6 space-y-4">
+          <TicketStats tickets={tickets} />
+          <QuickActions categories={mappedCategories} onActionClick={handleQuickAction} />
+          <div className="flex-1 min-h-0">
             <TicketList tickets={tickets} />
           </div>
+        </div>
 
-          <div className="space-y-6">
+        {/* Right Column: Announcements + Help (30%) */}
+        <div className="flex-[3] flex flex-col min-h-0 space-y-6 pt-3 pb-6 pr-6">
+          <div className="flex-1 overflow-y-auto">
             <AnnouncementsSidebar announcements={announcements} />
+          </div>
+          <div className="flex-shrink-0">
             <HelpResourcesSidebar />
           </div>
         </div>
       </div>
 
       {/* Debug info for development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 left-4 bg-white border rounded-lg shadow-lg p-3 text-xs max-w-sm">
+      {/* {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 left-4 bg-white border rounded-lg shadow-lg p-3 text-xs max-w-sm z-50">
           <h4 className="font-semibold mb-1">Debug Info</h4>
           <div>Raw categories: {categories?.length || 0}</div>
           <div>Mapped categories: {mappedCategories.length}</div>
           <div>Locations: {mockLocations.length}</div>
           <div>User: {mockUser.name}</div>
         </div>
-      )}
+      )} */}
 
       {/* ✅ Updated NewTicketModal with all required props */}
       <NewTicketModal

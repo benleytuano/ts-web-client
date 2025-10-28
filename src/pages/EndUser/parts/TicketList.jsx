@@ -20,8 +20,8 @@ export function TicketList({ tickets }) {
   const closedTickets = filteredTickets.filter((t) => t.status === "Resolved" || t.status === "Closed")
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>My Support Tickets</CardTitle>
@@ -38,27 +38,29 @@ export function TicketList({ tickets }) {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="open" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+      <CardContent className="flex-1 flex flex-col overflow-hidden">
+        <Tabs defaultValue="open" className="w-full flex flex-col flex-1 overflow-hidden">
+          <TabsList className="grid w-full grid-cols-2 flex-shrink-0 sticky top-0 z-10">
             <TabsTrigger value="open">Open & In Progress ({openTickets.length})</TabsTrigger>
             <TabsTrigger value="closed">Resolved & Closed ({closedTickets.length})</TabsTrigger>
           </TabsList>
-          <TabsContent value="open" className="space-y-4 mt-4">
-            {openTickets.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>No open tickets. Great job!</p>
-              </div>
-            ) : (
-              openTickets.map((ticket) => <TicketItem key={ticket.id} ticket={ticket} />)
-            )}
-          </TabsContent>
-          <TabsContent value="closed" className="space-y-4 mt-4">
-            {closedTickets.map((ticket) => (
-              <TicketItem key={ticket.id} ticket={ticket} />
-            ))}
-          </TabsContent>
+          <div className="flex-1 overflow-y-auto pr-2">
+            <TabsContent value="open" className="space-y-4 mt-4">
+              {openTickets.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No open tickets. Great job!</p>
+                </div>
+              ) : (
+                openTickets.map((ticket) => <TicketItem key={ticket.id} ticket={ticket} />)
+              )}
+            </TabsContent>
+            <TabsContent value="closed" className="space-y-4 mt-4">
+              {closedTickets.map((ticket) => (
+                <TicketItem key={ticket.id} ticket={ticket} />
+              ))}
+            </TabsContent>
+          </div>
         </Tabs>
       </CardContent>
     </Card>

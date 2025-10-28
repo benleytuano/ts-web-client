@@ -1,6 +1,6 @@
 // src/components/parts/Dashboard/TicketStats.jsx
-import { Card, CardContent } from "@/components/ui/card"
 import { AlertCircle, Clock, CheckCircle, MessageSquare } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 
 export function TicketStats({ tickets }) {
   const stats = {
@@ -11,30 +11,37 @@ export function TicketStats({ tickets }) {
   }
 
   const statCards = [
-    { label: "Open Tickets", value: stats.open, icon: AlertCircle, color: "blue" },
+    { label: "Open", value: stats.open, icon: AlertCircle, color: "blue" },
     { label: "In Progress", value: stats.inProgress, icon: Clock, color: "yellow" },
     { label: "Resolved", value: stats.resolved, icon: CheckCircle, color: "green" },
-    { label: "Total Tickets", value: stats.total, icon: MessageSquare, color: "gray" }
+    { label: "Total", value: stats.total, icon: MessageSquare, color: "gray" }
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-      {statCards.map((stat, index) => {
-        const Icon = stat.icon
-        return (
-          <Card key={index}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-2xl font-bold text-${stat.color}-600`}>{stat.value}</p>
-                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
+    <Card>
+      <CardContent>
+        <div className="flex items-center justify-between gap-4">
+          {statCards.map((stat, index) => {
+            const Icon = stat.icon
+            const colorClasses = {
+              blue: "text-blue-600",
+              yellow: "text-yellow-600",
+              green: "text-green-600",
+              gray: "text-gray-600"
+            }
+
+            return (
+              <div key={index} className="flex items-center gap-3 flex-1">
+                <Icon className={`h-5 w-5 ${colorClasses[stat.color]}`} />
+                <div className="min-w-0">
+                  <p className={`text-lg font-bold ${colorClasses[stat.color]}`}>{stat.value}</p>
+                  <p className="text-xs font-medium text-gray-600 whitespace-nowrap">{stat.label}</p>
                 </div>
-                <Icon className={`h-8 w-8 text-${stat.color}-500`} />
               </div>
-            </CardContent>
-          </Card>
-        )
-      })}
-    </div>
+            )
+          })}
+        </div>
+      </CardContent>
+    </Card>
   )
 }
