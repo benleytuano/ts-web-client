@@ -17,7 +17,7 @@ export function TicketList({ tickets }) {
   )
 
   const openTickets = filteredTickets.filter((t) => t.status === "open" || t.status === "In Progress")
-  const closedTickets = filteredTickets.filter((t) => t.status === "Resolved" || t.status === "Closed")
+  const closedTickets = filteredTickets.filter((t) => t.status === "resolved" || t.status === "closed")
 
   return (
     <Card className="flex flex-col h-full">

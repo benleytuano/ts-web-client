@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card"
 export function TicketStats({ tickets }) {
   const stats = {
     open: tickets.filter(t => t.status === "open").length,
-    assigned: tickets.filter(t => t.assignee_id !== null).length,
-    resolved: tickets.filter(t => t.status === "resolved").length,
+    assigned: tickets.filter(t => t.assignee_id !== null && t.status !== "resolved" && t.status !== "closed").length,
+    resolved: tickets.filter(t => t.status === "resolved" || t.status === "closed").length,
     total: tickets.length
   }
 

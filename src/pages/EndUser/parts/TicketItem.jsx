@@ -49,7 +49,7 @@ export function TicketItem({ ticket }) {
     }
   }
 
-  const isResolved = ticket.status === "Resolved" || ticket.status === "Closed"
+  const isResolved = ticket.status === "resolved" || ticket.status === "closed"
 
   return (
     <Card className={isResolved ? "opacity-75" : "hover:shadow-md transition-shadow"}>
@@ -65,7 +65,7 @@ export function TicketItem({ ticket }) {
             <Badge variant="outline" className={getStatusColor(ticket.status)}>
               {ticket.status}
             </Badge>
-            {ticket.assignee && (
+            {!isResolved && ticket.assignee && (
               <Badge className="bg-purple-100 text-purple-700 border-purple-200 flex items-center space-x-1">
                 <User className="h-3 w-3" />
                 <span>Assigned</span>
