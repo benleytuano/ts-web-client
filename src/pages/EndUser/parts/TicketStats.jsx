@@ -4,15 +4,15 @@ import { Card, CardContent } from "@/components/ui/card"
 
 export function TicketStats({ tickets }) {
   const stats = {
-    open: tickets.filter(t => t.status === "Open" || t.status === "In Progress").length,
-    inProgress: tickets.filter(t => t.status === "In Progress").length,
-    resolved: tickets.filter(t => t.status === "Resolved").length,
+    open: tickets.filter(t => t.status === "open").length,
+    assigned: tickets.filter(t => t.assignee_id !== null).length,
+    resolved: tickets.filter(t => t.status === "resolved").length,
     total: tickets.length
   }
 
   const statCards = [
     { label: "Open", value: stats.open, icon: AlertCircle, color: "blue" },
-    { label: "In Progress", value: stats.inProgress, icon: Clock, color: "yellow" },
+    { label: "Assigned", value: stats.assigned, icon: Clock, color: "yellow" },
     { label: "Resolved", value: stats.resolved, icon: CheckCircle, color: "green" },
     { label: "Total", value: stats.total, icon: MessageSquare, color: "gray" }
   ]

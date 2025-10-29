@@ -50,13 +50,6 @@ const priorities = [
     color: "bg-orange-50 text-orange-700 border-orange-200",
     icon: AlertTriangle,
   },
-  {
-    value: "Critical",
-    label: "Critical/Emergency",
-    description: "Immediate attention required",
-    color: "bg-red-50 text-red-700 border-red-200",
-    icon: Zap,
-  },
 ]
 
 export function NewTicketModal({ 
@@ -375,7 +368,7 @@ export function NewTicketModal({
           />
         </div>
 
-        {(formData.priority === "High" || formData.priority === "Critical") && (
+        {formData.priority === "high" && (
           <div>
             <Label htmlFor="urgencyReason">Why is this urgent? *</Label>
             <Textarea
