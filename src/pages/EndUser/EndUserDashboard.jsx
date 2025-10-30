@@ -17,113 +17,6 @@ import {
   Phone,
 } from "lucide-react"
 
-// Mock data for development
-const userTickets = [
-  {
-    id: "61674",
-    title: "PRINTER NOT WORKING",
-    description: "printer not working - urgent repair needed for patient documentation",
-    category: "Printer Issues",
-    priority: "High",
-    status: "In Progress",
-    createdAt: "2025-01-19T12:38:00Z",
-    updatedAt: "2025-01-19T14:57:00Z",
-    assignedTo: "John Paul Mendoza",
-    location: "NURSING - OPD",
-    lastUpdate: "Technician is on the way to check the printer connection",
-  },
-  {
-    id: "61670",
-    title: "Email access problem",
-    description: "Cannot access email account since this morning",
-    category: "Email Problems",
-    priority: "Medium",
-    status: "Open",
-    createdAt: "2025-01-18T11:51:00Z",
-    updatedAt: "2025-01-18T11:51:00Z",
-    assignedTo: null,
-    location: "NURSING - OPD",
-    lastUpdate: null,
-  },
-  {
-    id: "61669",
-    title: "Computer won't start",
-    description: "Desktop computer in room 201 won't turn on. Power button not responding.",
-    category: "Computer/Hardware",
-    priority: "High",
-    status: "Open",
-    createdAt: "2025-01-19T09:15:00Z",
-    updatedAt: "2025-01-19T09:15:00Z",
-    assignedTo: null,
-    location: "ADMIN - OFFICE 201",
-    lastUpdate: null,
-  },
-  {
-    id: "61668",
-    title: "Software installation request",
-    description: "Need Microsoft Project installed for project management tasks",
-    category: "Software Issue",
-    priority: "Low",
-    status: "In Progress",
-    createdAt: "2025-01-17T14:20:00Z",
-    updatedAt: "2025-01-18T10:30:00Z",
-    assignedTo: "Maria Santos",
-    location: "HR - MAIN OFFICE",
-    lastUpdate: "License approved, scheduled for installation tomorrow",
-  },
-  {
-    id: "61665",
-    title: "Computer running slow",
-    description: "Workstation is very slow, affecting patient care workflow",
-    category: "Computer/Hardware",
-    priority: "Medium",
-    status: "Resolved",
-    createdAt: "2025-01-17T08:20:00Z",
-    updatedAt: "2025-01-17T16:30:00Z",
-    assignedTo: "Tech Support Team",
-    location: "NURSING - OPD",
-    lastUpdate: "Issue resolved - computer cleaned and updated",
-  },
-  {
-    id: "61663",
-    title: "Phone extension not working",
-    description: "Extension 2845 cannot make or receive calls",
-    category: "Phone Issue",
-    priority: "Medium",
-    status: "Resolved",
-    createdAt: "2025-01-16T13:45:00Z",
-    updatedAt: "2025-01-16T15:20:00Z",
-    assignedTo: "Telecom Team",
-    location: "PHARMACY - MAIN",
-    lastUpdate: "Phone line reset and tested successfully",
-  },
-  {
-    id: "61660",
-    title: "Network connection issues",
-    description: "Intermittent internet connection in our department",
-    category: "Network/Internet",
-    priority: "Low",
-    status: "Closed",
-    createdAt: "2025-01-15T10:30:00Z",
-    updatedAt: "2025-01-16T09:15:00Z",
-    assignedTo: "Network Team",
-    location: "NURSING - OPD",
-    lastUpdate: "Network issue resolved - router was replaced",
-  },
-  {
-    id: "61658",
-    title: "Printer paper jam",
-    description: "Constant paper jams in HP LaserJet printer",
-    category: "Printer Issues",
-    priority: "Low",
-    status: "Closed",
-    createdAt: "2025-01-14T11:00:00Z",
-    updatedAt: "2025-01-14T14:30:00Z",
-    assignedTo: "John Paul Mendoza",
-    location: "ACCOUNTING - 3RD FLOOR",
-    lastUpdate: "Printer serviced and paper path cleaned",
-  }
-]
 
 const announcementsData = [
   {
@@ -242,12 +135,13 @@ const CATEGORY_METADATA = {
 export default function EndUserDashboard() {
   const [isNewTicketOpen, setIsNewTicketOpen] = useState(false)
   const [selectedQuickAction, setSelectedQuickAction] = useState(null)
-  
+
   // Get data from loader
-  const { categories, tickets, loading, error } = useLoaderData()
+  const { categories, tickets, user, loading, error } = useLoaderData()
 
   console.log('Raw categories from loader:', categories)
   console.log('Raw Tickets from loader', tickets);
+  console.log("User : ", user);
   // ✅ Map API categories with metadata
   const mappedCategories = categories?.map(dbCategory => {
     const metadata = CATEGORY_METADATA[dbCategory.id]
@@ -322,7 +216,7 @@ export default function EndUserDashboard() {
     <div className="h-screen bg-gray-50 flex flex-col">
       <DashboardHeader
         onNewTicket={() => setIsNewTicketOpen(true)}
-        userName="RP"
+        user={user}
       />
 
       <div className="flex-1 flex min-h-0 overflow-hidden gap-6">

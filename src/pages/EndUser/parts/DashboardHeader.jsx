@@ -21,7 +21,15 @@ import {
 import { logout } from "../../../services/auth";
 
 
-export function DashboardHeader({ onNewTicket, userName = "RP" }) {
+export function DashboardHeader({ onNewTicket, user }) {
+  // Get user initials for avatar
+  const getInitials = (firstName, lastName) => {
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase()
+  }
+
+  const userInitials = getInitials(user?.first_name, user?.last_name)
+  const userName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim()
+
   return (
     <div className="bg-white border-b">
       <div className="px-6 py-4">
@@ -48,7 +56,7 @@ export function DashboardHeader({ onNewTicket, userName = "RP" }) {
               >
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-blue-500 text-white font-semibold">
-                    {userName}
+                    {userInitials}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -56,10 +64,7 @@ export function DashboardHeader({ onNewTicket, userName = "RP" }) {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium">this should be the name of the login user</p>
-                  <p className="w-[200px] truncate text-sm text-muted-foreground">
-                    this should be the the role of the login user
-                  </p>
+                  <p className="font-medium">{userName}</p>
                 </div>
               </div>
               <DropdownMenuSeparator />
