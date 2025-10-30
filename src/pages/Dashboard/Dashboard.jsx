@@ -189,6 +189,7 @@ const canReassign = roleName === "admin";
         tickets={tickets}
         selectedTicket={selectedTicket}
         onTicketSelect={setSelectedTicket}
+        currentUserId={currentUserId}
       />
 
       <div className="flex flex-1 min-h-0 min-w-0 overflow-auto">

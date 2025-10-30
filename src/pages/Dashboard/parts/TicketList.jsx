@@ -22,7 +22,7 @@ import {
   InboxIcon,
 } from "lucide-react";
 
-export function TicketList({ tickets, selectedTicket, onTicketSelect }) {
+export function TicketList({ tickets, selectedTicket, onTicketSelect, currentUserId }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("open");
   const [priorityFilter, setPriorityFilter] = useState("all");
@@ -74,7 +74,7 @@ export function TicketList({ tickets, selectedTicket, onTicketSelect }) {
     const matchesTab =
       activeTab === "all" ||
       (activeTab === "open" && ticket.status === "Open") ||
-      (activeTab === "assigned" && ticket.assignedTo);
+      (activeTab === "assigned" && ticket.assignee_id === currentUserId);
 
     const matchesPriority =
       priorityFilter === "all" ||
