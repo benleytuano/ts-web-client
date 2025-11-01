@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Select,
   SelectContent,
@@ -65,93 +66,7 @@ import {
   ChevronsRight,
 } from "lucide-react";
 
-// Mock data with more users for pagination
-const generateMockUsers = () => {
-  const baseUsers = [
-    {
-      id: 1,
-      firstName: "John",
-      lastName: "Mendoza",
-      email: "john.mendoza@ihoms.com",
-      role: "IT Support",
-      department: "IT DEPARTMENT",
-      location: "SERVER ROOM",
-      status: "Active",
-      lastLogin: "2025-01-07T10:30:00Z",
-      createdAt: "2024-12-01T08:00:00Z",
-      permissions: [
-        "view_tickets",
-        "edit_tickets",
-        "assign_tickets",
-        "resolve_tickets",
-      ],
-      avatar: null,
-    },
-    {
-      id: 2,
-      firstName: "Rheenamel",
-      lastName: "Pacamara",
-      email: "rheenamel.pacamara@ihoms.com",
-      role: "Nurse",
-      department: "NURSING - OPD",
-      location: "NURSING - OPD",
-      status: "Active",
-      lastLogin: "2025-01-07T09:15:00Z",
-      createdAt: "2024-11-15T10:30:00Z",
-      permissions: ["view_tickets", "create_tickets"],
-      avatar: null,
-    },
-    {
-      id: 3,
-      firstName: "Tuaño",
-      lastName: "Benley Earl",
-      email: "tuano.benley@ihoms.com",
-      role: "Administrator",
-      department: "ADMINISTRATION",
-      location: "ADMINISTRATION",
-      status: "Active",
-      lastLogin: "2025-01-07T11:45:00Z",
-      createdAt: "2024-10-01T09:00:00Z",
-      permissions: ["all_permissions"],
-      avatar: null,
-    },
-  ];
 
-  // Generate additional mock users for pagination testing
-  const additionalUsers = Array.from({ length: 47 }, (_, i) => ({
-    id: i + 4,
-    firstName: `User${i + 4}`,
-    lastName: `Test${i + 4}`,
-    email: `user${i + 4}@ihoms.com`,
-    role: ["Nurse", "Doctor", "Staff", "IT Support"][i % 4],
-    department: [
-      "NURSING - OPD",
-      "EMERGENCY DEPARTMENT",
-      "IT DEPARTMENT",
-      "PHARMACY",
-    ][i % 4],
-    location: [
-      "NURSING - OPD",
-      "EMERGENCY DEPARTMENT",
-      "SERVER ROOM",
-      "PHARMACY DEPARTMENT",
-    ][i % 4],
-    status: ["Active", "Inactive", "Pending"][i % 3],
-    lastLogin:
-      i % 3 === 0
-        ? null
-        : new Date(
-            Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-    createdAt: new Date(
-      Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
-    ).toISOString(),
-    permissions: ["view_tickets", "create_tickets"],
-    avatar: null,
-  }));
-
-  return [...baseUsers, ...additionalUsers];
-};
 
 const rolePermissions = {
   Administrator: ["all_permissions"],
@@ -221,29 +136,11 @@ const allPermissions = [
   },
 ];
 
-const departments = [
-  "IT DEPARTMENT",
-  "NURSING - OPD",
-  "NURSING - ICU",
-  "NURSING - PEDIATRICS",
-  "EMERGENCY DEPARTMENT",
-  "CARDIOLOGY",
-  "PHARMACY",
-  "PUBLIC HEALTH UNIT",
-  "MULTIMEDIA",
-  "ADMINISTRATION",
-];
-
 export default function UserManagement() {
-  const { posts } = useLoaderData();
+  const { roles: loaderRoles = [], departments: loaderDepartments = [], users: loaderUsers = [] } = useLoaderData();
 
-  useEffect(() => {
-    console.log("Posts loaded:", posts);
-  }, []); // Only runs once per mount
-
-  const [allUsers] = useState(generateMockUsers());
+  const [allUsers] = useState(loaderUsers);
   const [users, setUsers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -264,25 +161,24 @@ export default function UserManagement() {
     email: "",
     role: "",
     department: "",
-    location: "",
     permissions: [],
   });
 
-  // Simulate server-side data fetching
-  const fetchUsers = useCallback(async () => {
-    setIsLoading(true);
-
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
+  // Filter and paginate users
+  const fetchUsers = useCallback(() => {
     const filteredUsers = allUsers.filter((user) => {
-      const matchesSearch =
-        user.firstName.toLowerCase().includes(filters.search.toLowerCase()) ||
-        user.lastName.toLowerCase().includes(filters.search.toLowerCase()) ||
-        user.email.toLowerCase().includes(filters.search.toLowerCase()) ||
-        user.department.toLowerCase().includes(filters.search.toLowerCase());
+      const firstName = user.first_name || user.firstName || "";
+      const lastName = user.last_name || user.lastName || "";
+      const department = user.department?.name || user.department || "";
+      const role = user.role?.name || user.role || "";
 
-      const matchesRole = filters.role === "all" || user.role === filters.role;
+      const matchesSearch =
+        firstName.toLowerCase().includes(filters.search.toLowerCase()) ||
+        lastName.toLowerCase().includes(filters.search.toLowerCase()) ||
+        (user.email || "").toLowerCase().includes(filters.search.toLowerCase()) ||
+        department.toLowerCase().includes(filters.search.toLowerCase());
+
+      const matchesRole = filters.role === "all" || role === filters.role;
       const matchesStatus =
         filters.status === "all" || user.status === filters.status;
 
@@ -301,7 +197,6 @@ export default function UserManagement() {
       total,
       totalPages,
     }));
-    setIsLoading(false);
   }, [allUsers, filters, pagination.page, pagination.pageSize]);
 
   useEffect(() => {
@@ -569,24 +464,7 @@ export default function UserManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          {isLoading ? (
-            <div className="space-y-4 p-6">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center space-x-4 p-4 border rounded-lg animate-pulse"
-                >
-                  <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/3"></div>
-                  </div>
-                  <div className="h-6 bg-gray-200 rounded w-20"></div>
-                  <div className="h-6 bg-gray-200 rounded w-24"></div>
-                </div>
-              ))}
-            </div>
-          ) : (
+          {users.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -614,16 +492,16 @@ export default function UserManagement() {
                               src={user.avatar || "/placeholder.svg"}
                             />
                             <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white font-medium">
-                              {user.firstName[0]}
-                              {user.lastName[0]}
+                              {((user.first_name || user.firstName) || "U")[0]}
+                              {((user.last_name || user.lastName) || "S")[0]}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">
                             <p className="font-medium text-gray-900 truncate">
-                              {user.firstName} {user.lastName}
+                              {(user.first_name || user.firstName || "")} {(user.last_name || user.lastName || "")}
                             </p>
                             <p className="text-sm text-gray-500 truncate">
-                              {user.email}
+                              {user.email || "N/A"}
                             </p>
                           </div>
                         </div>
@@ -631,27 +509,27 @@ export default function UserManagement() {
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className={getRoleColor(user.role)}
+                          className={getRoleColor(user.role?.name || user.role || "")}
                         >
-                          {user.role}
+                          {user.role?.name || user.role || "N/A"}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <Building className="h-4 w-4 text-gray-400 flex-shrink-0" />
                           <span className="text-sm text-gray-700 truncate">
-                            {user.department}
+                            {user.department?.name || user.department || "N/A"}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          {getStatusIcon(user.status)}
+                          {getStatusIcon(user.status || "")}
                           <Badge
                             variant="outline"
-                            className={getStatusColor(user.status)}
+                            className={getStatusColor(user.status || "")}
                           >
-                            {user.status}
+                            {user.status || "N/A"}
                           </Badge>
                         </div>
                       </TableCell>
@@ -716,12 +594,16 @@ export default function UserManagement() {
                 </TableBody>
               </Table>
             </div>
+          ) : (
+            <div className="p-6 text-center">
+              <p className="text-gray-500">No users found</p>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Pagination */}
-      {!isLoading && (
+      {users.length > 0 && (
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white rounded-lg shadow-sm">
           <div className="flex items-center space-x-2">
             <p className="text-sm text-gray-700">
@@ -866,48 +748,28 @@ export default function UserManagement() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Role *</Label>
-              <Select value={newUser.role} onValueChange={handleRoleChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(rolePermissions).map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={loaderRoles}
+                value={newUser.role}
+                onValueChange={handleRoleChange}
+                placeholder="Select role..."
+                searchPlaceholder="Search roles..."
+                maxItems={5}
+                emptyMessage="No roles found."
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="department">Department *</Label>
-              <Select
+              <Combobox
+                options={loaderDepartments}
                 value={newUser.department}
                 onValueChange={(value) =>
                   setNewUser({ ...newUser, department: value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-2 space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                value={newUser.location}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, location: e.target.value })
-                }
-                placeholder="Enter location"
+                placeholder="Select department..."
+                searchPlaceholder="Search departments..."
+                maxItems={5}
+                emptyMessage="No departments found."
               />
             </div>
           </div>
@@ -983,7 +845,8 @@ export default function UserManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="editRole">Role *</Label>
-                  <Select
+                  <Combobox
+                    options={loaderRoles}
                     value={selectedUser.role}
                     onValueChange={(value) => {
                       const permissions = rolePermissions[value] || [];
@@ -993,18 +856,11 @@ export default function UserManagement() {
                         permissions,
                       });
                     }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(rolePermissions).map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {role}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select role..."
+                    searchPlaceholder="Search roles..."
+                    maxItems={5}
+                    emptyMessage="No roles found."
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="editStatus">Status</Label>
@@ -1026,42 +882,20 @@ export default function UserManagement() {
                 </div>
               </div>
 
-              {/* Department and Location */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="editDepartment">Department *</Label>
-                  <Select
-                    value={selectedUser.department}
-                    onValueChange={(value) =>
-                      setSelectedUser({ ...selectedUser, department: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept} value={dept}>
-                          {dept}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="editLocation">Location</Label>
-                  <Input
-                    id="editLocation"
-                    value={selectedUser.location}
-                    onChange={(e) =>
-                      setSelectedUser({
-                        ...selectedUser,
-                        location: e.target.value,
-                      })
-                    }
-                    placeholder="Enter location"
-                  />
-                </div>
+              {/* Department */}
+              <div className="space-y-2">
+                <Label htmlFor="editDepartment">Department *</Label>
+                <Combobox
+                  options={loaderDepartments}
+                  value={selectedUser.department}
+                  onValueChange={(value) =>
+                    setSelectedUser({ ...selectedUser, department: value })
+                  }
+                  placeholder="Select department..."
+                  searchPlaceholder="Search departments..."
+                  maxItems={5}
+                  emptyMessage="No departments found."
+                />
               </div>
 
               {/* Permissions */}
