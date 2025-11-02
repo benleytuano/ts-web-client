@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet, useRouteLoaderData, useNavigation } from "react-router";
 import { Sidebar } from "../components/shared/Sidebar";
 import { Header } from "../components/shared/Header";
+import { Toaster } from "../components/ui/sonner";
 import UserManagementSkeleton from "../pages/UserManagement/UserManagementSkeleton";
 
 export default function RootLayout() {
@@ -43,6 +44,7 @@ export default function RootLayout() {
           </div>
         </div>
       </div>
+      <Toaster />
     </>
   );
 }

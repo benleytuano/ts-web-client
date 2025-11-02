@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouteLoaderData, useLoaderData } from "react-router";
+import { toast } from "sonner";
 import axios from "../../services/api"; // your configured axios instance
 import { TicketList } from "./parts/TicketList";
 import { TicketDetails } from "./parts/TicketDetails";
@@ -137,9 +138,9 @@ const canReassign = roleName === "admin";
     } catch (err) {
       const status = err?.response?.status;
       if (status === 409) {
-        alert("Someone already took this ticket. Please refresh.");
+        toast.warning("Someone already took this ticket. Please refresh.");
       } else {
-        alert(err?.response?.data?.message || "Assign failed.");
+        toast.error(err?.response?.data?.message || "Assign failed.");
       }
       console.error(err);
     }
@@ -155,9 +156,9 @@ const canReassign = roleName === "admin";
     } catch (err) {
       const status = err?.response?.status;
       if (status === 409) {
-        alert("Assignment changed while you were viewing it. Please refresh.");
+        toast.error("Assignment changed while you were viewing it. Please refresh.");
       } else {
-        alert(err?.response?.data?.message || "Unassign failed.");
+        toast.error(err?.response?.data?.message || "Unassign failed.");
       }
       console.error(err);
     }
@@ -172,11 +173,11 @@ const canReassign = roleName === "admin";
     } catch (err) {
       const status = err?.response?.status;
       if (status === 403) {
-        alert("Only the current assignee can resolve this ticket.");
+        toast.error("Only the current assignee can resolve this ticket.");
       } else if (status === 409) {
-        alert("Ticket state changed or already resolved/closed. Please refresh.");
+        toast.error("Ticket state changed or already resolved/closed. Please refresh.");
       } else {
-        alert(err?.response?.data?.message || "Resolve failed.");
+        toast.error(err?.response?.data?.message || "Resolve failed.");
       }
       console.error(err);
     }
