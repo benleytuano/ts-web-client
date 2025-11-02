@@ -23,12 +23,6 @@ export const router = createBrowserRouter([
     // shouldRevalidate: () => false
   },
   {
-    path: "/user-management",
-    Component: UserManagement,
-    loader: userManagementLoader,
-    action: addUserAction,
-  },
-  {
     path: "/",
     Component: Login,
     action: loginPostAction,
@@ -40,13 +34,19 @@ export const router = createBrowserRouter([
   {
     id: 'root',
     path: "/dashboard",
-    Component: RootLayout, 
+    Component: RootLayout,
     loader: rootLayoutLoader, // uncomment this when commiting
     children: [
       {
         index: true,
         Component: Dashboard,
         loader: dashboardLoader,
+      },
+      {
+        path: "user-management",
+        Component: UserManagement,
+        loader: userManagementLoader,
+        action: addUserAction,
       },
     ],
   },

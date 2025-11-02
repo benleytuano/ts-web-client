@@ -27,6 +27,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { logout } from "../../services/auth";
 
 // Helper function to capitalize first letter of each word
@@ -57,8 +58,39 @@ const getUserInitials = (user) => {
   return "U";
 };
 
+// Helper function to generate breadcrumb items from pathname
+const generateBreadcrumbs = (pathname) => {
+  const segments = pathname.split("/").filter(Boolean);
+  const breadcrumbs = [];
+
+  // Always add Dashboard as first item
+  breadcrumbs.push({ label: "Dashboard", path: "/dashboard", isHome: true });
+
+  // Map segments to breadcrumb labels
+  const segmentLabels = {
+    "user-management": "User Management",
+    tickets: "Tickets",
+    equipment: "Equipment Requests",
+    announcements: "Announcements",
+  };
+
+  segments.forEach((segment, index) => {
+    if (segment === "dashboard") return; // Skip dashboard as it's already added
+
+    const label = segmentLabels[segment] || capitalizeWords(segment.replace(/-/g, " "));
+    const path = "/" + segments.slice(0, index + 1).join("/");
+
+    breadcrumbs.push({ label, path, isLast: index === segments.length - 1 });
+  });
+
+  return breadcrumbs;
+};
+
 export function Header({ ticketId, user }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const breadcrumbs = generateBreadcrumbs(location.pathname);
 
   return (
     <header className="bg-white border-b px-6 py-4 h-16 flex-shrink-0">
@@ -66,15 +98,23 @@ export function Header({ ticketId, user }) {
         <div className="flex items-center space-x-4">
           <Breadcrumb>
             <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="#" className="flex items-center">
-                  <Home className="h-4 w-4" />
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink href="#">Tickets</BreadcrumbLink>
-              </BreadcrumbItem>
+              {breadcrumbs.map((crumb, index) => (
+                <>
+                  <BreadcrumbItem key={`item-${crumb.path}`}>
+                    {crumb.isLast ? (
+                      <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink
+                        onClick={() => navigate(crumb.path)}
+                        className="cursor-pointer"
+                      >
+                        {crumb.isHome ? <Home className="h-4 w-4" /> : crumb.label}
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+                  {index < breadcrumbs.length - 1 && <BreadcrumbSeparator key={`sep-${crumb.path}`} />}
+                </>
+              ))}
               {ticketId && (
                 <>
                   <BreadcrumbSeparator />

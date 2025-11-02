@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router";
 import {
   Home,
   Laptop,
@@ -11,12 +12,12 @@ import {
   ChevronLeft,
 } from "lucide-react";
 
-const navigationItems = [
-  { id: "dashboard", label: "Dashboard", icon: Home },
-  { id: "tickets", label: "Tickets", icon: Laptop },
-  { id: "equipment", label: "Equipment Requests", icon: Laptop },
-  { id: "announcements", label: "Announcements", icon: Megaphone },
-  { id: "administration", label: "Administration", icon: Settings },
+const allNavigationItems = [
+  { id: "dashboard", label: "Dashboard", icon: Home, roles: ["admin"], route: "/dashboard" },
+  { id: "tickets", label: "Tickets", icon: Laptop, roles: ["admin", "agent"], route: "/dashboard" },
+  { id: "equipment", label: "Equipment Requests", icon: Laptop, roles: ["admin"], route: "/dashboard" },
+  { id: "announcements", label: "Announcements", icon: Megaphone, roles: ["admin"], route: "/dashboard" },
+  { id: "administration", label: "Administration", icon: Settings, roles: ["admin"], route: "/dashboard/user-management" },
 ];
 
 // Helper function to capitalize first letter of each word
@@ -54,6 +55,26 @@ export function Sidebar({
   onSectionChange,
   user,
 }) {
+  const navigate = useNavigate();
+
+  // Get user role (handle both snake_case and camelCase)
+  const userRole = user?.role?.name || user?.roleName || "agent";
+
+  // Filter navigation items based on user role
+  const navigationItems = allNavigationItems.filter((item) =>
+    item.roles.includes(userRole.toLowerCase())
+  );
+
+  const handleNavigation = (item) => {
+    // If item has a route (like Administration), navigate to it
+    if (item.route) {
+      navigate(item.route);
+    } else {
+      // Otherwise, use the section change handler
+      onSectionChange(item.id);
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -86,10 +107,10 @@ export function Sidebar({
               key={item.id}
               variant={activeSection === item.id ? "secondary" : "ghost"}
               className={cn(
-                "w-full justify-start mb-1",
+                "w-full justify-start mb-1 cursor-pointer",
                 collapsed ? "px-2" : "px-3"
               )}
-              onClick={() => onSectionChange(item.id)}
+              onClick={() => handleNavigation(item)}
             >
               <Icon className="h-4 w-4 flex-shrink-0" />
               {!collapsed && (

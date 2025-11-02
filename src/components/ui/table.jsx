@@ -4,10 +4,21 @@ import { cn } from "@/lib/utils"
 
 function Table({
   className,
+  noWrapper,
+  divClassname,
   ...props
 }) {
+  if (noWrapper) {
+    return (
+      <table
+        data-slot="table"
+        className={cn("w-full caption-bottom text-sm", className)}
+        {...props} />
+    );
+  }
+
   return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto">
+    <div data-slot="table-container" className={cn("relative w-full overflow-x-auto", divClassname)}>
       <table
         data-slot="table"
         className={cn("w-full caption-bottom text-sm", className)}

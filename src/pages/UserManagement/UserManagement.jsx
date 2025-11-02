@@ -284,7 +284,7 @@ export default function UserManagement() {
   );
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden">
       {/* Header */}
       <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between flex-shrink-0">
         <div>
@@ -384,22 +384,21 @@ export default function UserManagement() {
 
       {/* Users Table */}
       <div className="flex-1 overflow-hidden flex flex-col bg-white mt-2">
-        <div className="flex-1 overflow-y-auto px-6">
-          {users.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50/50">
-                    <TableHead className="font-semibold">User</TableHead>
-                    <TableHead className="font-semibold">Role</TableHead>
-                    <TableHead className="font-semibold">Department</TableHead>
-                    <TableHead className="font-semibold text-right">
-                      Actions
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
+        {users.length > 0 ? (
+          <div className="relative w-full max-h-full overflow-y-auto">
+            <Table noWrapper>
+              <TableHeader className="bg-white sticky top-0 z-10">
+                <TableRow className="bg-gray-50/50">
+                  <TableHead className="font-semibold">User</TableHead>
+                  <TableHead className="font-semibold">Role</TableHead>
+                  <TableHead className="font-semibold">Department</TableHead>
+                  <TableHead className="font-semibold text-right">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+              {users.map((user) => (
                     <TableRow
                       key={user.id}
                       className="hover:bg-gray-50/50 transition-colors"
@@ -464,16 +463,15 @@ export default function UserManagement() {
                         </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="p-6 text-center">
-              <p className="text-gray-500">No users found</p>
-            </div>
-          )}
-        </div>
+              ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-gray-500">No users found</p>
+          </div>
+        )}
 
         {/* Pagination */}
         {users.length > 0 && (
