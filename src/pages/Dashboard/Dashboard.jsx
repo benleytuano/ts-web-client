@@ -195,7 +195,10 @@ const canReassign = roleName === "admin";
 
       <div className="flex flex-1 min-h-0 min-w-0 overflow-auto">
         <div className="flex-1 min-w-0 p-6 ">
-          <TicketDetails ticket={selectedTicket} />
+          <TicketDetails
+            ticket={selectedTicket}
+            onResolve={() => selectedTicket && resolveTicket(selectedTicket.id)}
+          />
         </div>
 
         <div className="sticky top-0 p-4">

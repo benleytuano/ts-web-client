@@ -162,7 +162,7 @@ export function TicketInfoPanel({
             <CardContent className="space-y-2">
               {showAssignToMe && (
                 <Button
-                  className="w-full justify-start"
+                  className="w-full justify-start cursor-pointer"
                   variant="outline"
                   onClick={onAssignToMe}
                 >
@@ -173,7 +173,7 @@ export function TicketInfoPanel({
 
               {showUnassign && (
                 <Button
-                  className="w-full justify-start"
+                  className="w-full justify-start cursor-pointer"
                   variant="outline"
                   onClick={onUnassign}
                 >
@@ -184,7 +184,7 @@ export function TicketInfoPanel({
 
               {showReassign && (
                 <Button
-                  className="w-full justify-start"
+                  className="w-full justify-start cursor-pointer"
                   variant="outline"
                   onClick={onReassign}
                 >
@@ -195,7 +195,7 @@ export function TicketInfoPanel({
 
               {canResolve && (
                 <Button
-                  className="w-full justify-start"
+                  className="w-full justify-start cursor-pointer"
                   variant="outline"
                   onClick={handleResolve}
                   disabled={resolving}

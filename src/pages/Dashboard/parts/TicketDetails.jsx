@@ -26,12 +26,13 @@ import { Textarea } from "@/components/ui/textarea";
 import axios from "../../../services/api";
 import { formatDateToReadable } from "@/lib/utils";
 
-export function TicketDetails({ ticket }) {
+export function TicketDetails({ ticket, onResolve = () => {} }) {
   const [ticketUpdates, setTicketUpdates] = useState([]);
   const [loadingUpdates, setLoadingUpdates] = useState(false);
   const [updateMessage, setUpdateMessage] = useState("");
   const [postingUpdate, setPostingUpdate] = useState(false);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [resolving, setResolving] = useState(false);
 
   // Update current date/time every second for real-time display
   useEffect(() => {
@@ -86,6 +87,16 @@ export function TicketDetails({ ticket }) {
       alert(error?.response?.data?.message || "Failed to post update");
     } finally {
       setPostingUpdate(false);
+    }
+  };
+
+  // Handle resolve ticket
+  const handleResolve = async () => {
+    setResolving(true);
+    try {
+      await Promise.resolve(onResolve());
+    } finally {
+      setResolving(false);
     }
   };
 
@@ -166,9 +177,21 @@ export function TicketDetails({ ticket }) {
           </span>
         </div>
 
-        <div className="flex space-x-2">
-          <Button variant="outline">Update</Button>
-          <Button>Resolve</Button>
+        <div className="flex space-x-2 ">
+          <Button
+            onClick={handleResolve}
+            disabled={resolving}
+            className="cursor-pointer"
+          >
+            {resolving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Resolving...
+              </>
+            ) : (
+              "Mark as Resolved"
+            )}
+          </Button>
         </div>
       </div>
 
@@ -291,10 +314,7 @@ export function TicketDetails({ ticket }) {
                       onChange={(e) => setUpdateMessage(e.target.value)}
                       disabled={postingUpdate}
                     />
-                    <div className="flex justify-end space-x-2">
-                      <Button variant="outline" disabled={postingUpdate}>
-                        Save Draft
-                      </Button>
+                    <div className="flex justify-end space-x-2">                
                       <Button
                         onClick={handlePostUpdate}
                         disabled={postingUpdate || !updateMessage.trim()}
