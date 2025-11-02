@@ -9,6 +9,7 @@ import Login from "../pages/Login/Login";
 import loginPostAction from "../pages/Login/Actions/postAction";
 import UserManagement from "../pages/UserManagement/UserManagement";
 import userManagementLoader from "../pages/UserManagement/Loader/userManagementLoader";
+import { addUserAction } from "../pages/UserManagement/Actions/addUserAction";
 import EndUserDashboard from "../pages/EndUser/EndUserDashboard";
 import { endUserDashboardLoader } from "../pages/EndUser/Loader/endUserDashboardLoader";
 import { createTicketAction } from "../pages/EndUser/Actions/createTicketAction";
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
     path: "/user-management",
     Component: UserManagement,
     loader: userManagementLoader,
+    action: addUserAction,
   },
   {
     path: "/",

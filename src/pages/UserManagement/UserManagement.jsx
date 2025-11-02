@@ -1,15 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useFetcher } from "react-router";
+import axios from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Combobox } from "@/components/ui/combobox";
@@ -33,7 +27,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -49,97 +42,26 @@ import {
   Plus,
   MoreHorizontal,
   Edit,
-  Trash2,
   Shield,
   Users,
   UserCheck,
   UserX,
   Building,
-  Calendar,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Clock,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 
 
-const rolePermissions = {
-  Administrator: ["all_permissions"],
-  "IT Support": [
-    "view_tickets",
-    "edit_tickets",
-    "assign_tickets",
-    "resolve_tickets",
-    "manage_users",
-  ],
-  Supervisor: [
-    "view_tickets",
-    "create_tickets",
-    "assign_tickets",
-    "view_reports",
-  ],
-  Doctor: ["view_tickets", "create_tickets", "priority_tickets"],
-  Nurse: ["view_tickets", "create_tickets"],
-  Staff: ["view_tickets", "create_tickets"],
-};
-
-const allPermissions = [
-  {
-    id: "view_tickets",
-    label: "View Tickets",
-    description: "Can view all tickets",
-  },
-  {
-    id: "create_tickets",
-    label: "Create Tickets",
-    description: "Can create new tickets",
-  },
-  {
-    id: "edit_tickets",
-    label: "Edit Tickets",
-    description: "Can edit ticket details",
-  },
-  {
-    id: "assign_tickets",
-    label: "Assign Tickets",
-    description: "Can assign tickets to users",
-  },
-  {
-    id: "resolve_tickets",
-    label: "Resolve Tickets",
-    description: "Can resolve and close tickets",
-  },
-  {
-    id: "priority_tickets",
-    label: "Priority Tickets",
-    description: "Can create high priority tickets",
-  },
-  {
-    id: "manage_users",
-    label: "Manage Users",
-    description: "Can manage user accounts",
-  },
-  {
-    id: "view_reports",
-    label: "View Reports",
-    description: "Can access system reports",
-  },
-  {
-    id: "system_settings",
-    label: "System Settings",
-    description: "Can modify system settings",
-  },
-];
-
 export default function UserManagement() {
-  const { roles: loaderRoles = [], departments: loaderDepartments = [], users: loaderUsers = [] } = useLoaderData();
+  const { roles: loaderRoles = [], departments: loaderDepartments = [], users: loaderUsers = [], permissions: loaderPermissions = [] } = useLoaderData();
+  const fetcher = useFetcher();
 
-  const [allUsers] = useState(loaderUsers);
+  const [allUsers, setAllUsers] = useState(loaderUsers);
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -155,10 +77,15 @@ export default function UserManagement() {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUserPermissions, setSelectedUserPermissions] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [addUserError, setAddUserError] = useState(null);
+  const [lastProcessedUserId, setLastProcessedUserId] = useState(null);
   const [newUser, setNewUser] = useState({
     firstName: "",
     lastName: "",
     email: "",
+    password: "securePassword123",
     role: "",
     department: "",
     permissions: [],
@@ -219,32 +146,6 @@ export default function UserManagement() {
     admins: allUsers.filter((u) => u.role === "Administrator").length,
   });
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "Active":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "Inactive":
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      case "Pending":
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      default:
-        return <AlertTriangle className="h-4 w-4 text-gray-500" />;
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-50 text-green-700 border-green-200";
-      case "Inactive":
-        return "bg-red-50 text-red-700 border-red-200";
-      case "Pending":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
-
   const getRoleColor = (role) => {
     switch (role) {
       case "Administrator":
@@ -260,68 +161,120 @@ export default function UserManagement() {
     }
   };
 
-  const handleAddUser = async () => {
-    const user = {
-      id: allUsers.length + 1,
-      ...newUser,
-      status: "Active",
-      lastLogin: null,
-      createdAt: new Date().toISOString(),
-      avatar: null,
+  const handleAddUser = () => {
+    setAddUserError(null);
+
+    // Find role and department names from the selected values
+    const selectedRole = loaderRoles.find(r => r.name === newUser.role);
+    const selectedDept = loaderDepartments.find(d => d.name === newUser.department);
+
+    if (!selectedRole || !selectedDept) {
+      setAddUserError("Please select both role and department");
+      return;
+    }
+
+    // Submit using fetcher
+    const submitData = {
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      email: newUser.email,
+      password: newUser.password,
+      role_id: selectedRole.id,
+      department_id: selectedDept.id,
     };
 
-    allUsers.push(user);
-    setNewUser({
-      firstName: "",
-      lastName: "",
-      email: "",
-      role: "",
-      department: "",
-      location: "",
-      permissions: [],
-    });
-    setIsAddUserOpen(false);
-    fetchUsers();
+    console.log('Submitting user data:', submitData);
+    fetcher.submit(submitData, { method: "post" });
   };
 
-  const handleEditUser = (user) => {
-    setSelectedUser({ ...user });
+  // Handle fetcher response
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data) {
+      if (fetcher.data.success) {
+        // Only process if we haven't already processed this user
+        if (lastProcessedUserId !== fetcher.data.user.id) {
+          // Add new user to the list
+          const newUserData = {
+            id: fetcher.data.user.id,
+            first_name: fetcher.data.user.first_name,
+            last_name: fetcher.data.user.last_name,
+            email: fetcher.data.user.email,
+            role_id: fetcher.data.user.role_id,
+            department_id: fetcher.data.user.department_id,
+            role: loaderRoles.find(r => r.id === fetcher.data.user.role_id),
+            department: loaderDepartments.find(d => d.id === fetcher.data.user.department_id),
+            status: "Active",
+          };
+
+          setAllUsers((prev) => [...prev, newUserData]);
+          setLastProcessedUserId(fetcher.data.user.id);
+
+          // Reset form
+          setNewUser({
+            firstName: "",
+            lastName: "",
+            email: "",
+            password: "securePassword123",
+            role: "",
+            department: "",
+            permissions: [],
+          });
+          setShowPassword(false);
+          setAddUserError(null);
+          setIsAddUserOpen(false);
+        }
+      } else {
+        // Show error
+        setAddUserError(fetcher.data.error || "Failed to create user");
+      }
+    }
+  }, [fetcher.state, fetcher.data, lastProcessedUserId, loaderRoles, loaderDepartments]);
+
+  const handleEditUser = async (user) => {
+    // Use all permissions from loader
+    setSelectedUserPermissions(loaderPermissions);
+
+    // Fetch the user's role permissions
+    try {
+      const roleId = user.role_id || user.role?.id;
+      if (roleId) {
+        const response = await axios.get(`/roles/${roleId}`);
+        const rolePermissions = response.data?.data?.permissions || [];
+        // Extract permission IDs from the role
+        const permissionIds = rolePermissions.map(p => p.id);
+
+        setSelectedUser({
+          ...user,
+          permissions: permissionIds,
+        });
+      } else {
+        setSelectedUser({
+          ...user,
+          permissions: user.permissions || [],
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching role permissions:", error);
+      setSelectedUser({
+        ...user,
+        permissions: user.permissions || [],
+      });
+    }
+
     setIsEditUserOpen(true);
   };
 
   const handleUpdateUser = async () => {
-    const index = allUsers.findIndex((user) => user.id === selectedUser.id);
-    if (index !== -1) {
-      allUsers[index] = selectedUser;
-    }
+    setAllUsers((prevUsers) => {
+      return prevUsers.map((user) =>
+        user.id === selectedUser.id ? selectedUser : user
+      );
+    });
     setIsEditUserOpen(false);
     setSelectedUser(null);
-    fetchUsers();
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      const index = allUsers.findIndex((user) => user.id === userId);
-      if (index !== -1) {
-        allUsers.splice(index, 1);
-      }
-      fetchUsers();
-    }
-  };
 
-  const handleToggleUserStatus = async (userId) => {
-    const index = allUsers.findIndex((user) => user.id === userId);
-    if (index !== -1) {
-      allUsers[index].status =
-        allUsers[index].status === "Active" ? "Inactive" : "Active";
-    }
-    fetchUsers();
-  };
-
-  const handleRoleChange = (role) => {
-    const permissions = rolePermissions[role] || [];
-    setNewUser({ ...newUser, role, permissions });
-  };
 
   const stats = getStats();
   const startItem = (pagination.page - 1) * pagination.pageSize + 1;
@@ -331,139 +284,107 @@ export default function UserManagement() {
   );
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-1">
-            Manage user accounts, roles, and permissions
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
         </div>
-        <Button onClick={() => setIsAddUserOpen(true)} className="shadow-sm">
+        <Button onClick={() => setIsAddUserOpen(true)} className="shadow-sm" size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Add User
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          {
-            title: "Total Users",
-            value: stats.total,
-            icon: Users,
-            color: "text-blue-500",
-          },
-          {
-            title: "Active Users",
-            value: stats.active,
-            icon: UserCheck,
-            color: "text-green-500",
-          },
-          {
-            title: "Inactive Users",
-            value: stats.inactive,
-            icon: UserX,
-            color: "text-red-500",
-          },
-          {
-            title: "Administrators",
-            value: stats.admins,
-            icon: Shield,
-            color: "text-purple-500",
-          },
-        ].map((card) => {
-          const Icon = card.icon;
-          return (
-            <Card
-              key={card.title}
-              className="hover:shadow-md transition-shadow"
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {card.value}
-                    </p>
-                    <p className="text-sm font-medium text-gray-600">
-                      {card.title}
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-full bg-gray-50">
-                    <Icon className={`h-6 w-6 ${card.color}`} />
-                  </div>
+      {/* Stats - Compact */}
+      <div className="py-2 bg-white border-b border-gray-200 flex-shrink-0 mt-2">
+        <div className="px-6 grid grid-cols-4 gap-4">
+          {[
+            {
+              title: "Total",
+              value: stats.total,
+              icon: Users,
+              color: "text-blue-500",
+            },
+            {
+              title: "Active",
+              value: stats.active,
+              icon: UserCheck,
+              color: "text-green-500",
+            },
+            {
+              title: "Inactive",
+              value: stats.inactive,
+              icon: UserX,
+              color: "text-red-500",
+            },
+            {
+              title: "Admins",
+              value: stats.admins,
+              icon: Shield,
+              color: "text-purple-500",
+            },
+          ].map((card) => {
+            const Icon = card.icon;
+            return (
+              <div key={card.title} className="flex items-center space-x-2">
+                <div className="p-1.5 rounded-lg bg-gray-50">
+                  <Icon className={`h-4 w-4 ${card.color}`} />
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                <div>
+                  <p className="text-lg font-bold text-gray-900">
+                    {card.value}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    {card.title}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="lg:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search users by name, email, or department..."
-                  value={filters.search}
-                  onChange={(e) =>
-                    handleFiltersChange({ ...filters, search: e.target.value })
-                  }
-                  className="pl-10"
-                />
-              </div>
+      <div className="py-2 bg-white border-b border-gray-200 flex-shrink-0 mt-2">
+        <div className="px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="lg:col-span-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search users by name, email, or department..."
+                value={filters.search}
+                onChange={(e) =>
+                  handleFiltersChange({ ...filters, search: e.target.value })
+                }
+                className="pl-10"
+              />
             </div>
-            <Select
-              value={filters.role}
-              onValueChange={(value) =>
-                handleFiltersChange({ ...filters, role: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                {Object.keys(rolePermissions).map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {role}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.status}
-              onValueChange={(value) =>
-                handleFiltersChange({ ...filters, status: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
-        </CardContent>
-      </Card>
+          <Select
+            value={filters.role}
+            onValueChange={(value) =>
+              handleFiltersChange({ ...filters, role: value })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              {loaderRoles.map((role) => (
+                <SelectItem key={role.id} value={role.name}>
+                  {role.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {/* Users Table */}
-      <Card className="shadow-sm">
-        <CardHeader className="border-b border-gray-100">
-          <CardTitle className="text-xl">Users</CardTitle>
-          <CardDescription>
-            Manage user accounts and their access permissions
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
+      <div className="flex-1 overflow-hidden flex flex-col bg-white mt-2">
+        <div className="flex-1 overflow-y-auto px-6">
           {users.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
@@ -472,8 +393,6 @@ export default function UserManagement() {
                     <TableHead className="font-semibold">User</TableHead>
                     <TableHead className="font-semibold">Role</TableHead>
                     <TableHead className="font-semibold">Department</TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="font-semibold">Last Login</TableHead>
                     <TableHead className="font-semibold text-right">
                       Actions
                     </TableHead>
@@ -522,27 +441,6 @@ export default function UserManagement() {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          {getStatusIcon(user.status || "")}
-                          <Badge
-                            variant="outline"
-                            className={getStatusColor(user.status || "")}
-                          >
-                            {user.status || "N/A"}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          <span className="text-sm text-gray-600">
-                            {user.lastLogin
-                              ? new Date(user.lastLogin).toLocaleDateString()
-                              : "Never"}
-                          </span>
-                        </div>
-                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -562,30 +460,6 @@ export default function UserManagement() {
                               <Edit className="mr-2 h-4 w-4" />
                               Edit User
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleToggleUserStatus(user.id)}
-                              className="cursor-pointer"
-                            >
-                              {user.status === "Active" ? (
-                                <>
-                                  <UserX className="mr-2 h-4 w-4" />
-                                  Deactivate
-                                </>
-                              ) : (
-                                <>
-                                  <UserCheck className="mr-2 h-4 w-4" />
-                                  Activate
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="text-red-600 cursor-pointer focus:text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete User
-                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -599,12 +473,11 @@ export default function UserManagement() {
               <p className="text-gray-500">No users found</p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Pagination */}
-      {users.length > 0 && (
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white rounded-lg shadow-sm">
+        {/* Pagination */}
+        {users.length > 0 && (
+          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-white flex-shrink-0 mt-2">
           <div className="flex items-center space-x-2">
             <p className="text-sm text-gray-700">
               Showing <span className="font-medium">{startItem}</span> to{" "}
@@ -700,7 +573,8 @@ export default function UserManagement() {
             </div>
           </div>
         </div>
-      )}
+        )}
+      </div>
 
       {/* Add User Dialog */}
       <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
@@ -711,6 +585,11 @@ export default function UserManagement() {
               Create a new user account with appropriate permissions.
             </DialogDescription>
           </DialogHeader>
+          {addUserError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {addUserError}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name *</Label>
@@ -746,12 +625,40 @@ export default function UserManagement() {
                 placeholder="Enter email address"
               />
             </div>
+            <div className="col-span-2 space-y-2">
+              <Label htmlFor="password">Password *</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={newUser.password}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, password: e.target.value })
+                  }
+                  placeholder="Enter password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="role">Role *</Label>
               <Combobox
                 options={loaderRoles}
                 value={newUser.role}
-                onValueChange={handleRoleChange}
+                onValueChange={(value) =>
+                  setNewUser({ ...newUser, role: value })
+                }
                 placeholder="Select role..."
                 searchPlaceholder="Search roles..."
                 maxItems={5}
@@ -774,10 +681,19 @@ export default function UserManagement() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddUserOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsAddUserOpen(false)}
+              disabled={fetcher.state === "submitting"}
+            >
               Cancel
             </Button>
-            <Button onClick={handleAddUser}>Add User</Button>
+            <Button
+              onClick={handleAddUser}
+              disabled={fetcher.state === "submitting"}
+            >
+              {fetcher.state === "submitting" ? "Adding..." : "Add User"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -789,7 +705,7 @@ export default function UserManagement() {
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
               Update user information and permissions for{" "}
-              {selectedUser?.firstName} {selectedUser?.lastName}
+              {selectedUser?.first_name || selectedUser?.firstName} {selectedUser?.last_name || selectedUser?.lastName}
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (
@@ -800,10 +716,11 @@ export default function UserManagement() {
                   <Label htmlFor="editFirstName">First Name *</Label>
                   <Input
                     id="editFirstName"
-                    value={selectedUser.firstName}
+                    value={selectedUser.first_name || selectedUser.firstName || ""}
                     onChange={(e) =>
                       setSelectedUser({
                         ...selectedUser,
+                        first_name: e.target.value,
                         firstName: e.target.value,
                       })
                     }
@@ -814,10 +731,11 @@ export default function UserManagement() {
                   <Label htmlFor="editLastName">Last Name *</Label>
                   <Input
                     id="editLastName"
-                    value={selectedUser.lastName}
+                    value={selectedUser.last_name || selectedUser.lastName || ""}
                     onChange={(e) =>
                       setSelectedUser({
                         ...selectedUser,
+                        last_name: e.target.value,
                         lastName: e.target.value,
                       })
                     }
@@ -841,19 +759,19 @@ export default function UserManagement() {
                 </div>
               </div>
 
-              {/* Role and Status */}
+              {/* Role and Department */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="editRole">Role *</Label>
                   <Combobox
                     options={loaderRoles}
-                    value={selectedUser.role}
+                    value={selectedUser.role?.name || selectedUser.role || ""}
                     onValueChange={(value) => {
-                      const permissions = rolePermissions[value] || [];
+                      const selectedRole = loaderRoles.find(r => r.name === value);
                       setSelectedUser({
                         ...selectedUser,
-                        role: value,
-                        permissions,
+                        role: selectedRole || { name: value },
+                        role_id: selectedRole?.id,
                       });
                     }}
                     placeholder="Select role..."
@@ -863,120 +781,74 @@ export default function UserManagement() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="editStatus">Status</Label>
-                  <Select
-                    value={selectedUser.status}
-                    onValueChange={(value) =>
-                      setSelectedUser({ ...selectedUser, status: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="editDepartment">Department *</Label>
+                  <Combobox
+                    options={loaderDepartments}
+                    value={selectedUser.department?.name || selectedUser.department || ""}
+                    onValueChange={(value) => {
+                      const selectedDept = loaderDepartments.find(d => d.name === value);
+                      setSelectedUser({
+                        ...selectedUser,
+                        department: selectedDept || { name: value },
+                        department_id: selectedDept?.id,
+                      });
+                    }}
+                    placeholder="Select department..."
+                    searchPlaceholder="Search departments..."
+                    maxItems={5}
+                    emptyMessage="No departments found."
+                  />
                 </div>
-              </div>
-
-              {/* Department */}
-              <div className="space-y-2">
-                <Label htmlFor="editDepartment">Department *</Label>
-                <Combobox
-                  options={loaderDepartments}
-                  value={selectedUser.department}
-                  onValueChange={(value) =>
-                    setSelectedUser({ ...selectedUser, department: value })
-                  }
-                  placeholder="Select department..."
-                  searchPlaceholder="Search departments..."
-                  maxItems={5}
-                  emptyMessage="No departments found."
-                />
               </div>
 
               {/* Permissions */}
               <div className="space-y-3">
-                <Label>Permissions</Label>
+                <Label>Permissions (Read-only)</Label>
                 <div className="border rounded-lg p-4 bg-gray-50">
-                  {selectedUser.permissions.includes("all_permissions") ? (
-                    <div className="flex items-center space-x-2">
-                      <Shield className="h-4 w-4 text-purple-500" />
-                      <Badge className="bg-purple-100 text-purple-800">
-                        All Permissions Granted
-                      </Badge>
+                  {selectedUserPermissions.length === 0 ? (
+                    <div className="text-sm text-gray-500">
+                      No permissions assigned to this role
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-3">
-                      {allPermissions
-                        .filter((p) => p.id !== "all_permissions")
-                        .map((permission) => (
+                      {selectedUserPermissions.map((permission) => {
+                        const isChecked = (selectedUser.permissions || []).includes(
+                          permission.id
+                        );
+                        return (
                           <div
                             key={permission.id}
-                            className="flex items-start space-x-2"
+                            className={`flex items-start space-x-2 p-2 rounded ${
+                              isChecked ? "bg-blue-50" : "bg-white"
+                            }`}
                           >
                             <input
                               type="checkbox"
                               id={`edit-${permission.id}`}
-                              checked={selectedUser.permissions.includes(
-                                permission.id
-                              )}
-                              onChange={(e) => {
-                                const updatedPermissions = e.target.checked
-                                  ? [...selectedUser.permissions, permission.id]
-                                  : selectedUser.permissions.filter(
-                                      (p) => p !== permission.id
-                                    );
-                                setSelectedUser({
-                                  ...selectedUser,
-                                  permissions: updatedPermissions,
-                                });
-                              }}
-                              className="mt-1 rounded border-gray-300"
+                              checked={isChecked}
+                              disabled
+                              className="mt-1 rounded border-gray-300 cursor-not-allowed"
                             />
                             <div className="min-w-0">
                               <Label
                                 htmlFor={`edit-${permission.id}`}
-                                className="text-sm font-medium cursor-pointer"
+                                className={`text-sm font-medium ${
+                                  isChecked
+                                    ? "text-blue-700 cursor-default"
+                                    : "text-gray-600 cursor-default"
+                                }`}
                               >
-                                {permission.label}
+                                {permission.name || permission.label}
                               </Label>
-                              <p className="text-xs text-gray-500">
-                                {permission.description}
-                              </p>
                             </div>
                           </div>
-                        ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Account Information */}
-              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-                <h4 className="font-medium text-sm text-gray-900">
-                  Account Information
-                </h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Created:</span>
-                    <p className="font-medium">
-                      {new Date(selectedUser.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Last Login:</span>
-                    <p className="font-medium">
-                      {selectedUser.lastLogin
-                        ? new Date(selectedUser.lastLogin).toLocaleDateString()
-                        : "Never"}
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
           <DialogFooter>

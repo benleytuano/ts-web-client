@@ -21,15 +21,17 @@ function deduplicateDepartments(departments) {
  */
 export default async function userManagementLoader() {
   try {
-    const [rolesRes, departmentsRes, usersRes] = await Promise.all([
+    const [rolesRes, departmentsRes, usersRes, permissionsRes] = await Promise.all([
       axios.get("/roles"),
       axios.get("/departments"),
       axios.get("/users"),
+      axios.get("/permissions"),
     ]);
 
     let roles = rolesRes.data?.data || rolesRes.data || [];
     let departments = departmentsRes.data?.data || departmentsRes.data || [];
     let users = usersRes.data?.data || usersRes.data || [];
+    let permissions = permissionsRes.data?.data || permissionsRes.data || [];
 
     console.log("Raw departments from API:", departments);
 
@@ -38,11 +40,13 @@ export default async function userManagementLoader() {
 
     console.log("Deduplicated departments:", departments);
     console.log("Users from API:", users);
+    console.log("Permissions from API:", permissions);
 
     return {
       roles,
       departments,
       users,
+      permissions,
       error: null
     };
   } catch (error) {
