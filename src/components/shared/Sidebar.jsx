@@ -66,13 +66,10 @@ export function Sidebar({
   );
 
   const handleNavigation = (item) => {
-    // If item has a route (like Administration), navigate to it
-    if (item.route) {
-      navigate(item.route);
-    } else {
-      // Otherwise, use the section change handler
-      onSectionChange(item.id);
-    }
+    // Update the active section dynamically
+    onSectionChange(item.id);
+    // Navigate to the item's route
+    navigate(item.route);
   };
 
   return (
