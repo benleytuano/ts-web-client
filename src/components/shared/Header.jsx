@@ -99,8 +99,8 @@ export function Header({ ticketId, user }) {
           <Breadcrumb>
             <BreadcrumbList>
               {breadcrumbs.map((crumb, index) => (
-                <>
-                  <BreadcrumbItem key={`item-${crumb.path}`}>
+                <div key={`crumb-${index}-${crumb.path}`} className="flex items-center">
+                  <BreadcrumbItem>
                     {crumb.isLast ? (
                       <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
                     ) : (
@@ -112,8 +112,8 @@ export function Header({ ticketId, user }) {
                       </BreadcrumbLink>
                     )}
                   </BreadcrumbItem>
-                  {index < breadcrumbs.length - 1 && <BreadcrumbSeparator key={`sep-${crumb.path}`} />}
-                </>
+                  {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
+                </div>
               ))}
               {ticketId && (
                 <>
@@ -128,25 +128,10 @@ export function Header({ ticketId, user }) {
         </div>
 
         <div className="flex items-center space-x-4">
-          <Button variant="outline" size="icon" className="hidden sm:flex">
-            <Bell className="h-4 w-4" />
-          </Button>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">New Ticket</span>
           </Button>
-
-          {/* Dark/Light Mode Toggle */}
-          <div className="flex items-center space-x-2">
-            <Sun className="h-4 w-4" />
-            <Switch
-              checked={isDarkMode}
-              onCheckedChange={setIsDarkMode}
-              aria-label="Toggle dark mode"
-            />
-            <Moon className="h-4 w-4" />
-          </div>
-
           {/* Profile Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -177,10 +162,6 @@ export function Header({ ticketId, user }) {
                 </div>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
               <DropdownMenuItem>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>

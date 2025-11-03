@@ -141,18 +141,36 @@ export function NewTicketModal({
   const handleSubmit = () => {
     if (!validateStep(2)) return
 
-    // Submit using fetcher
-    const submitData = {
-      ...formData,
-      category_id: selectedCategory?.id, // ✅ Use the database ID directly
-      department: user?.department?.name, // Auto-populate from user
-      department_id: user?.department?.id,
-    }
+    // Create FormData to ensure all fields are properly serialized
+    const formDataToSubmit = new FormData()
 
-    console.log('Submitting ticket data:', submitData)
+    // Add all form fields
+    formDataToSubmit.append("title", formData.title)
+    formDataToSubmit.append("description", formData.description)
+    formDataToSubmit.append("category_id", selectedCategory?.id)
+    formDataToSubmit.append("priority", formData.priority)
+    formDataToSubmit.append("location", formData.location)
+    formDataToSubmit.append("contact_number", formData.contactPhone)
+    formDataToSubmit.append("patientName", formData.patientName)
+    formDataToSubmit.append("equipmentDetails", formData.equipmentDetails)
+    formDataToSubmit.append("urgencyReason", formData.urgencyReason)
+    formDataToSubmit.append("department_id", user?.department?.id)
+
+    console.log('Submitting ticket data:', {
+      title: formData.title,
+      description: formData.description,
+      category_id: selectedCategory?.id,
+      priority: formData.priority,
+      location: formData.location,
+      contact_number: formData.contactPhone,
+      patientName: formData.patientName,
+      equipmentDetails: formData.equipmentDetails,
+      urgencyReason: formData.urgencyReason,
+      department_id: user?.department?.id,
+    })
 
     // Submit to current route's action
-    fetcher.submit(submitData, { method: "post" })
+    fetcher.submit(formDataToSubmit, { method: "post" })
   }
 
   const handleCloseModal = () => {

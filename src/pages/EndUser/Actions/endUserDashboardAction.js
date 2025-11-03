@@ -105,6 +105,8 @@ async function handleTicketCreation(formData) {
     const ticketData = Object.fromEntries(formData);
 
     console.log('Action received ticket data:', ticketData);
+    console.log('contactPhone value:', ticketData.contactPhone);
+    console.log('All form keys:', Object.keys(ticketData));
 
     const apiData = {
       title: ticketData.title,
@@ -112,7 +114,7 @@ async function handleTicketCreation(formData) {
       category_id: parseInt(ticketData.category_id),
       priority: ticketData.priority,
       location_id: parseInt(ticketData.location),
-      contact_phone: ticketData.contactPhone,
+      contact_number: ticketData.contact_number,
       patient_name: ticketData.patientName || null,
       equipment_details: ticketData.equipmentDetails || null,
       urgency_reason: ticketData.urgencyReason || null,
