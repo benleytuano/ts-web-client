@@ -12,13 +12,13 @@ import userManagementLoader from "../pages/UserManagement/Loader/userManagementL
 import { addUserAction } from "../pages/UserManagement/Actions/addUserAction";
 import EndUserDashboard from "../pages/EndUser/EndUserDashboard";
 import { endUserDashboardLoader } from "../pages/EndUser/Loader/endUserDashboardLoader";
-import { createTicketAction } from "../pages/EndUser/Actions/createTicketAction";
+import { endUserDashboardAction } from "../pages/EndUser/Actions/endUserDashboardAction";
 
 export const router = createBrowserRouter([
   {
     path: "/end-user-dashboard",
     Component: EndUserDashboard,
-    action: createTicketAction,
+    action: endUserDashboardAction,
     loader: endUserDashboardLoader,
     // shouldRevalidate: () => false
   },

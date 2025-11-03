@@ -1,6 +1,10 @@
 // src/components/parts/Dashboard/DashboardHeader.jsx
+import { useState, useEffect } from "react"
+import { useFetcher } from "react-router"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,6 +12,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Home,
   Bell,
@@ -17,11 +29,36 @@ import {
   User,
   Settings,
   LogOut,
+  Eye,
+  EyeOff,
+  Loader2,
 } from "lucide-react";
 import { logout } from "../../../services/auth";
+import { toast } from "sonner";
 
 
 export function DashboardHeader({ onNewTicket, user }) {
+  const fetcher = useFetcher()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [settingsData, setSettingsData] = useState({
+    email: user?.email || "",
+    password: "",
+    confirmPassword: "",
+  })
+
+  // Handle fetcher response
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data) {
+      if (fetcher.data.success) {
+        toast.success(fetcher.data.message || "Profile updated successfully")
+        setIsSettingsOpen(false)
+      } else {
+        toast.error(fetcher.data.error || "Failed to update profile")
+      }
+    }
+  }, [fetcher.state, fetcher.data])
+
   // Get user initials for avatar
   const getInitials = (firstName, lastName) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase()
@@ -29,6 +66,47 @@ export function DashboardHeader({ onNewTicket, user }) {
 
   const userInitials = getInitials(user?.first_name, user?.last_name)
   const userName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim()
+
+  const handleSettingsOpen = () => {
+    // Use setTimeout to ensure dropdown closes first
+    setTimeout(() => {
+      setSettingsData({
+        email: user?.email || "",
+        password: "",
+        confirmPassword: "",
+      })
+      setShowPassword(false)
+      setIsSettingsOpen(true)
+    }, 0)
+  }
+
+  const handleSaveSettings = () => {
+    // Validate inputs
+    if (!settingsData.email) {
+      toast.error("Email is required")
+      return
+    }
+
+    if (settingsData.password && settingsData.password !== settingsData.confirmPassword) {
+      toast.error("Passwords do not match")
+      return
+    }
+
+    if (settingsData.password && settingsData.password.length < 6) {
+      toast.error("Password must be at least 6 characters")
+      return
+    }
+
+    // Submit using fetcher
+    const formData = new FormData()
+    formData.append("email", settingsData.email)
+    if (settingsData.password) {
+      formData.append("password", settingsData.password)
+      formData.append("password_confirmation", settingsData.confirmPassword)
+    }
+
+    fetcher.submit(formData, { method: "post" })
+  }
 
   return (
     <div className="bg-white border-b">
@@ -41,9 +119,7 @@ export function DashboardHeader({ onNewTicket, user }) {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <Button variant="outline" size="icon">
-              <Bell className="h-4 w-4" />
-            </Button>
+          
             <Button onClick={onNewTicket}>
               <Plus className="h-4 w-4 mr-2" />
               New Ticket
@@ -68,11 +144,7 @@ export function DashboardHeader({ onNewTicket, user }) {
                 </div>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSettingsOpen}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
@@ -90,6 +162,118 @@ export function DashboardHeader({ onNewTicket, user }) {
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="max-w-md" showCloseButton={true}>
+          <DialogHeader>
+            <DialogTitle>Account Settings</DialogTitle>
+            <DialogDescription>
+              Update your email and password
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <Label htmlFor="settings-email">Email Address</Label>
+              <Input
+                id="settings-email"
+                type="email"
+                value={settingsData.email}
+                onChange={(e) =>
+                  setSettingsData({ ...settingsData, email: e.target.value })
+                }
+                placeholder="Enter your email"
+              />
+              <p className="text-xs text-gray-500">
+                Current email: {user?.email}
+              </p>
+            </div>
+
+            {/* Password Field */}
+            <div className="space-y-2">
+              <Label htmlFor="settings-password">New Password (Optional)</Label>
+              <div className="relative">
+                <Input
+                  id="settings-password"
+                  type={showPassword ? "text" : "password"}
+                  value={settingsData.password}
+                  onChange={(e) =>
+                    setSettingsData({ ...settingsData, password: e.target.value })
+                  }
+                  placeholder="Leave blank to keep current password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm Password Field */}
+            {settingsData.password && (
+              <div className="space-y-2">
+                <Label htmlFor="settings-confirm-password">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="settings-confirm-password"
+                    type={showPassword ? "text" : "password"}
+                    value={settingsData.confirmPassword}
+                    onChange={(e) =>
+                      setSettingsData({
+                        ...settingsData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    placeholder="Confirm your new password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsSettingsOpen(false)}
+              disabled={fetcher.state !== "idle"}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveSettings} disabled={fetcher.state !== "idle"}>
+              {fetcher.state !== "idle" ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
