@@ -182,24 +182,8 @@ export default function EndUserDashboard() {
   // const tickets = userTickets
   const announcements = announcementsData
 
-  // ✅ Mock locations (replace with real data from loader later)
-  const mockLocations = [
-    { id: 1, name: "NURSING - OPD" },
-    { id: 2, name: "NURSING - ICU" },
-    { id: 3, name: "EMERGENCY DEPARTMENT" },
-    { id: 4, name: "PHARMACY" },
-    { id: 5, name: "LABORATORY" },
-  ]
-
-  // ✅ Mock user (replace with real data from loader later)
-  const mockUser = {
-    id: 1,
-    name: "RP",
-    department: {
-      id: 1,
-      name: "NURSING - OPD"
-    }
-  }
+  // Extract locations from user's department
+  const locations = user?.department?.locations || []
 
   const handleNewTicket = (ticketData) => {
     console.log("New ticket submitted:", ticketData)
@@ -258,8 +242,8 @@ export default function EndUserDashboard() {
         onSubmit={handleNewTicket}
         preselectedCategory={selectedQuickAction?.id}
         categories={mappedCategories}  // ✅ Pass mapped categories with icons/colors
-        locations={mockLocations}      // ✅ Pass locations array
-        user={mockUser}               // ✅ Pass user with department info
+        locations={locations}          // ✅ Pass locations from user's department
+        user={user}                    // ✅ Pass user from loader
       />
     </div>
   )

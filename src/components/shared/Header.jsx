@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,6 +10,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,10 +35,15 @@ import {
   User,
   Settings,
   LogOut,
+  Eye,
+  EyeOff,
+  Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { useFetcher } from "react-router";
 import { logout } from "../../services/auth";
+import { toast } from "sonner";
 
 // Helper function to capitalize first letter of each word
 const capitalizeWords = (str) => {
@@ -87,10 +102,71 @@ const generateBreadcrumbs = (pathname) => {
 };
 
 export function Header({ ticketId, user }) {
+  const fetcher = useFetcher();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [settingsData, setSettingsData] = useState({
+    email: user?.email || "",
+    password: "",
+    confirmPassword: "",
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const breadcrumbs = generateBreadcrumbs(location.pathname);
+
+  // Handle fetcher response
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data) {
+      if (fetcher.data.success) {
+        toast.success(fetcher.data.message || "Profile updated successfully");
+        setIsSettingsOpen(false);
+      } else {
+        toast.error(fetcher.data.error || "Failed to update profile");
+      }
+    }
+  }, [fetcher.state, fetcher.data]);
+
+  const handleSettingsOpen = () => {
+    // Use setTimeout to ensure dropdown closes first
+    setTimeout(() => {
+      setSettingsData({
+        email: user?.email || "",
+        password: "",
+        confirmPassword: "",
+      });
+      setShowPassword(false);
+      setIsSettingsOpen(true);
+    }, 0);
+  };
+
+  const handleSaveSettings = () => {
+    // Validate inputs
+    if (!settingsData.email) {
+      toast.error("Email is required");
+      return;
+    }
+
+    if (settingsData.password && settingsData.password !== settingsData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (settingsData.password && settingsData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    // Submit using fetcher
+    const formData = new FormData();
+    formData.append("email", settingsData.email);
+    if (settingsData.password) {
+      formData.append("password", settingsData.password);
+      formData.append("password_confirmation", settingsData.confirmPassword);
+    }
+
+    fetcher.submit(formData, { method: "post" });
+  };
 
   return (
     <header className="bg-white border-b px-6 py-4 h-16 flex-shrink-0">
@@ -128,10 +204,6 @@ export function Header({ ticketId, user }) {
         </div>
 
         <div className="flex items-center space-x-4">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">New Ticket</span>
-          </Button>
           {/* Profile Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -162,7 +234,7 @@ export function Header({ ticketId, user }) {
                 </div>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSettingsOpen}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
@@ -179,6 +251,104 @@ export function Header({ ticketId, user }) {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="max-w-md" showCloseButton={true}>
+          <DialogHeader>
+            <DialogTitle>Account Settings</DialogTitle>
+            <DialogDescription>
+              Update your email and password
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={settingsData.email}
+                onChange={(e) =>
+                  setSettingsData({ ...settingsData, email: e.target.value })
+                }
+              />
+            </div>
+
+            {/* Password Field */}
+            <div className="space-y-2">
+              <Label htmlFor="password">New Password (Optional)</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Leave blank to keep current password"
+                  value={settingsData.password}
+                  onChange={(e) =>
+                    setSettingsData({ ...settingsData, password: e.target.value })
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm Password Field */}
+            {settingsData.password && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Confirm your new password"
+                    value={settingsData.confirmPassword}
+                    onChange={(e) =>
+                      setSettingsData({
+                        ...settingsData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsSettingsOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveSettings}
+              disabled={fetcher.state === "submitting"}
+            >
+              {fetcher.state === "submitting" ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
